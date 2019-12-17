@@ -1,4 +1,7 @@
-package view;
+package Model;
+
+import com.sun.org.apache.bcel.internal.generic.IF_ACMPEQ;
+import javafx.util.Pair;
 
 import javax.annotation.processing.FilerException;
 import java.io.*;
@@ -9,15 +12,14 @@ import java.util.concurrent.Semaphore;
 
 public class Indexer {
 
-    private static TreeMap<String, String> termDictionary = new TreeMap(String.CASE_INSENSITIVE_ORDER);
-    private HashMap<String, String> docDictionary;
+    private static Map<String, Map<String,Integer>> termDictionary = new HashMap<>();
+    private static HashMap<String, String> docDictionary = new HashMap<>();
     private File directory;
     private File subFolderTerms;
     private File subFolderDocs;
     private static Semaphore mutex = new Semaphore(1);
     private static int fileNum =0;
     private static int folderNum=0;
-
 
     public int getNumberOfTerms(){
         return termDictionary.size();
@@ -28,7 +30,6 @@ public class Indexer {
 
     public Indexer(boolean stem, String postingPath) throws IOException {
 
-        docDictionary = new HashMap<>();
         if(!stem){
             subFolderTerms = new File(postingPath+"/Corpus/Terms");
             subFolderDocs= new File(postingPath+"/Corpus/Docs");
@@ -119,8 +120,29 @@ public class Indexer {
                 }
             }
             mutex.acquire();
-            if(!termDictionary.containsKey(tkn.getStr())){
-                termDictionary.put(tkn.getStr(),subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getStr().toLowerCase().charAt(0)+"_merged.txt");
+            if(!termDictionary.containsKey(tkn.getStr().toUpperCase()) && !termDictionary.containsKey(tkn.getStr().toLowerCase())){
+                if(Character.isUpperCase(tkn.getStr().charAt(0))){
+                    termDictionary.put(tkn.getStr().toUpperCase(),new HashMap<>());
+                    termDictionary.get(tkn.getStr().toUpperCase()).put(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getStr().toLowerCase().charAt(0)+"_merged.txt",sumTf(tkn.getStr(),termMap.get(tkn).values()));
+                }
+                else{
+                    termDictionary.put(tkn.getStr().toLowerCase(),new HashMap<>());
+                    termDictionary.get(tkn.getStr().toLowerCase()).put(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getStr().toLowerCase().charAt(0)+"_merged.txt",sumTf(tkn.getStr(),termMap.get(tkn).values()));
+                }
+            }
+            else{
+                if(termDictionary.containsKey(tkn.getStr().toUpperCase())){
+                    if(Character.isUpperCase(tkn.getStr().charAt(0))) {
+                        termDictionary.get(tkn.getStr().toUpperCase()).put(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getStr().toLowerCase().charAt(0)+"_merged.txt",sumTf(tkn.getStr(),termMap.get(tkn).values()));
+                    }
+                    else{
+                        termDictionary.get(tkn.getStr().toUpperCase()).put(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getStr().toLowerCase().charAt(0)+"_merged.txt",sumTf(tkn.getStr(),termMap.get(tkn).values()));
+                        termDictionary.put(tkn.getStr().toLowerCase(),termDictionary.remove(tkn.getStr().toUpperCase()));
+                    }
+                }
+                else{
+                    termDictionary.get(tkn.getStr().toLowerCase()).put(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getStr().toLowerCase().charAt(0)+"_merged.txt",sumTf(tkn.getStr(),termMap.get(tkn).values()));
+                }
             }
             mutex.release();
         }
@@ -150,23 +172,44 @@ public class Indexer {
         }
 
         //ArrayList<String> termDic = new ArrayList<>();
-        ArrayList<String> docDic = new ArrayList<>();
+        /*ArrayList<String> docDic = new ArrayList<>();
         for(Map.Entry<String,String> me: docDictionary.entrySet()){
             docDic.add(me.getKey() +" : "+me.getValue()+"\n");
-        }
+        }*/
         /*for(Map.Entry<String,String> me: termDictionary.entrySet()){
             termDic.add(me.getKey() +" : "+me.getValue()+"\n");
         }*/
 
-        mutex.acquire();
+        /*mutex.acquire();
         writeRaw(docDic,(subFolderDocs.getPath()+"/docDictionary/"+folderNum+".txt"));
-        //writeRaw(termDic,(subFolderTerms.getPath()+"/termDictionary/"+fileNum+".txt"));
-        //fileNum++;
+        writeRaw(termDic,(subFolderTerms.getPath()+"/termDictionary/"+fileNum+".txt"));
+        fileNum++;
         folderNum++;
         mutex.release();
-        docDic.clear();
-
+        docDic.clear();*/
         return true;
+    }
+
+    private Integer sumTf(String term,Collection<Integer> values) {
+        Integer sum;
+        if((termDictionary.containsKey(term.toLowerCase()) && termDictionary.get(term.toLowerCase()).size()>0)){
+            sum = termDictionary.get(term.toLowerCase()).get(termDictionary.get(term.toLowerCase()).keySet().toArray()[0]);
+        }
+        if((termDictionary.containsKey(term.toUpperCase()) && termDictionary.get(term.toUpperCase()).size()>0)) {
+            if (Character.isLowerCase(term.charAt(0))) {
+                sum = termDictionary.get(term.toUpperCase()).remove(termDictionary.get(term.toUpperCase()).keySet().toArray()[0]);
+            } else {
+                sum = termDictionary.get(term.toUpperCase()).get(termDictionary.get(term.toUpperCase()).keySet().toArray()[0]);
+            }
+        }
+
+        else{
+            sum =0;
+        }
+        for(Integer num:values){
+            sum = sum+ num;
+        }
+        return sum;
     }
 
     //https://stackoverflow.com/questions/453018/number-of-lines-in-a-file-in-java
@@ -209,6 +252,8 @@ public class Indexer {
             is.close();
         }
     }
+
+
 
     //https://stackoverflow.com/questions/5600422/method-to-find-string-inside-of-the-text-file-then-getting-the-following-lines/45168182
     public int getLineNum(String term, String path) {
@@ -258,8 +303,13 @@ public class Indexer {
     }
 
 
-    public static TreeMap<String, String> getTermDictionary() {
+    public static Map<String, Map<String,Integer>> getTermDictionary() {
         return termDictionary;
     }
-
+    public static void clearMap(){
+        termDictionary.clear();
+    }
+    public static void setTermDictionary(Map<String, Map<String, Integer>> termDictionary) {
+        Indexer.termDictionary = termDictionary;
+    }
 }

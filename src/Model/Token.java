@@ -1,4 +1,4 @@
-package view;
+package Model;
 
 public class Token {
     private String str;
@@ -6,6 +6,7 @@ public class Token {
     private String docId;
     private boolean inTitle;
     private String file;
+    private String date;
 
 
     @Override
@@ -37,11 +38,12 @@ public class Token {
         return this.str.hashCode();
     }
 
-    public Token(String str, String docId, boolean inTitle,String fileName) {
+    public Token(String str, String docId, String date, boolean inTitle, String fileName) {
         this.str = str;
         this.length = str.length();
         this.docId = docId;
         this.inTitle = inTitle;
+        this.date = date;
         file = fileName;
     }
 

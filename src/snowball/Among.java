@@ -1,4 +1,4 @@
-package view.snowball;
+package snowball;
 
 import java.lang.reflect.Method;
 

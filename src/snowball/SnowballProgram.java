@@ -1,5 +1,5 @@
 
-package view.snowball;
+package snowball;
 import java.lang.reflect.InvocationTargetException;
 
 public class SnowballProgram {
