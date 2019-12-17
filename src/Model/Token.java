@@ -16,6 +16,7 @@ public class Token {
         Token token = (Token) o;
         return str.equals(token.str);
     }
+    
 
     public void setStr(String str) {
         this.str = str;
