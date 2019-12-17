@@ -56,7 +56,7 @@ public class ReadFile implements  Runnable{
         }
         try {
             Parser p = new Parser(stem,this,stopWordsPath,index);
-            p.parseDocs(splits);
+                p.parseDocs(splits);
         } catch (ParseException e) {
             e.printStackTrace();
         } catch (IOException e) {

@@ -13,16 +13,13 @@ import java.util.concurrent.Semaphore;
 public class Indexer {
 
     private static Map<String, Map<String,Integer>> termDictionary = new HashMap<>();
-
     private static HashMap<String, String> docDictionary = new HashMap<>();
-
     private File directory;
     private File subFolderTerms;
     private File subFolderDocs;
     private static Semaphore mutex = new Semaphore(1);
     private static int fileNum =0;
     private static int folderNum=0;
-
 
     public int getNumberOfTerms(){
         return termDictionary.size();
@@ -256,6 +253,8 @@ public class Indexer {
         }
     }
 
+
+
     //https://stackoverflow.com/questions/5600422/method-to-find-string-inside-of-the-text-file-then-getting-the-following-lines/45168182
     public int getLineNum(String term, String path) {
         File file = new File(path);
@@ -307,13 +306,10 @@ public class Indexer {
     public static Map<String, Map<String,Integer>> getTermDictionary() {
         return termDictionary;
     }
-
+    public static void clearMap(){
+        termDictionary.clear();
+    }
     public static void setTermDictionary(Map<String, Map<String, Integer>> termDictionary) {
         Indexer.termDictionary = termDictionary;
     }
-
-    public static HashMap<String, String> getDocDictionary() {
-        return docDictionary;
-    }
-
 }
