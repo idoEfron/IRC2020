@@ -18,6 +18,14 @@ public class ReadFile implements  Runnable{
     private boolean stem;
     String stopWordsPath;
 
+    /**
+     * this is the constructor of the read file
+     * @param subFolder the folder that the read file reads
+     * @param i the indexer object
+     * @param stemming the boolean of the stemming option
+     * @param stopWordsPath the string of the stop words
+     * @throws IOException
+     */
     public ReadFile(List<File> subFolder,Indexer i,boolean stemming,String stopWordsPath) throws IOException {
         //allFile = new ArrayList<>();
         this.subFolder = subFolder;
@@ -26,6 +34,9 @@ public class ReadFile implements  Runnable{
         this.stopWordsPath = stopWordsPath;
     }
 
+    /**
+     * this function reads the file in a giving corpus path
+     */
     @Override
     public void run() {
         Scanner file3 = null;
@@ -68,10 +79,18 @@ public class ReadFile implements  Runnable{
 
     }
 
+    /**
+     * this function is a getter that gets the subFolder list
+     * @return
+     */
     public List<File> getSubFolder() {
         return subFolder;
     }
 
+    /**
+     * this function is a setter thats set the subFolder list
+     * @param subFolder
+     */
     public void setSubFolder(List<File> subFolder) {
         this.subFolder = subFolder;
     }

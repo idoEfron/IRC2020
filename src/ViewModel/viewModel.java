@@ -14,6 +14,7 @@ import java.util.concurrent.Executors;
 
 public class viewModel {
     public int[] start(boolean stem, String postPath, String corpusPath) throws IOException {
+
         File[] files1 = null;
         File folder = new File(corpusPath);
         ExecutorService executor = Executors.newFixedThreadPool(5);
@@ -21,7 +22,6 @@ public class viewModel {
         boolean corpus;
         boolean subFolder1;
         boolean subFolder2;
-
         if (stem) {
             File directory = new File(postPath + "/StemmedCorpus");
             corpus = directory.mkdir();
@@ -64,7 +64,8 @@ public class viewModel {
             mergedDoc.createNewFile();
         }
         if (!corpus || !subFolder1 || !subFolder2) {
-            throw new IOException("cannot create directory for indexer corpus");
+            int[] error = {0};
+            return error;
         }
 
 
@@ -100,11 +101,16 @@ public class viewModel {
         executor.shutdown();
         while (!executor.isTerminated()) {
         }
+
+
+
         Indexer index = new Indexer(stem, postPath);
-        int[] corpusInfo = new int[3];
+        Map<String,Map<String,Integer>> map = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        map.putAll(Indexer.getTermDictionary());
+        index.setTermDictionary(map);
+        int[] corpusInfo = new int[2];
         corpusInfo[0] = index.getNumberOfTerms();
         corpusInfo[1] = index.getNumberOrDocuments();
-        corpusInfo[2] = 0;
         return corpusInfo;
     }
 

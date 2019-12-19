@@ -14,9 +14,9 @@ import java.util.regex.Pattern;
 
 public class Parser {
 
-    private Map<Token, Map<String, Integer>> termMap;
+    private Map<Token, Map<String, ArrayList<String>>> termMap;
     private HashSet<String> stopwords;
-    private Map<String, Map<String, Integer>> entities = new HashMap<>();
+    private Map<String, Map<String, ArrayList<String>>> entities = new HashMap<>();
     private Map<String, String> months;
     private Map<String, String> mass;
     private Map<String, String> electrical;
@@ -27,7 +27,16 @@ public class Parser {
     private ReadFile rf;
     private Indexer indexer;
 
-
+    /**
+     * this is the constructor of the parser
+     *
+     * @param stem          the boolean that return true or false
+     * @param readFile      the readFile Object
+     * @param stopWordsPath the stopWords
+     * @param indexer       the indexer object
+     * @throws IOException
+     * @throws ParseException
+     */
     public Parser(boolean stem, ReadFile readFile, String stopWordsPath, Indexer indexer) throws IOException, ParseException {
         this.indexer = indexer;
         rf = readFile;
@@ -159,7 +168,7 @@ public class Parser {
     /**
      * this function is responsibly is to split the documents to tokens
      *
-     * @param docList
+     * @param docList that needed to be parse and splited
      */
     public void parseDocs(String[] docList) throws ParseException, IOException, InterruptedException {
         String docNo = "";
@@ -235,6 +244,20 @@ public class Parser {
                                     token = cleanToken(afterRemoving[0]);
                                     afterCleaning.add(new Token(token, docNo, date, title.contains(token), rf.getSubFolder().get(0).getName()));
                                 }
+                            } else {
+                                token = cleanToken(currToken);
+                                if (token.contains("-")) {
+                                    if (isNumric(token)) {
+                                        String[] arrToken = token.split("-");
+                                        afterCleaning.add(new Token(arrToken[0], docNo, date, title.contains(arrToken[0]), rf.getSubFolder().get(0).getName()));
+                                        afterCleaning.add(new Token(arrToken[1], docNo, date, title.contains(arrToken[1]), rf.getSubFolder().get(0).getName()));
+                                        afterCleaning.add(new Token(token, docNo, date, title.contains(token), rf.getSubFolder().get(0).getName()));
+                                    }
+                                } else {
+                                    if (token.length() > 0) {
+                                        afterCleaning.add(new Token(token, docNo, date, title.contains(token), rf.getSubFolder().get(0).getName()));
+                                    }
+                                }
                             }
                         } else {
                             token = cleanToken(tokens[y]);
@@ -261,7 +284,23 @@ public class Parser {
         indexer.addBlock(this);
     }
 
-    private boolean isNumric(String currToken) {
+    /**
+     * this function chack if the number is numric
+     *
+     * @param currToken the token that needed to be checked
+     * @return true or false
+     */
+    private boolean isNumric(String currToken) throws ParseException {
+        if (currToken.contains("-")) {
+            String[] arrTokens = currToken.split("-");
+            if (arrTokens.length == 2) {
+                if (isNumber(arrTokens[0]) && isNumber(arrTokens[1])) {
+                    return true;
+                }
+                return false;
+            }
+            return false;
+        }
         try {
             Double.parseDouble(currToken);
             return true;
@@ -270,6 +309,16 @@ public class Parser {
         }
     }
 
+    /**
+     * this function handel all of the tokens and parse each one
+     *
+     * @param terms all of the term in a document
+     * @param docID the document id
+     * @param date  the date of the document
+     * @param title the title of the document
+     * @throws ParseException
+     * @throws InterruptedException
+     */
     private void handler(ArrayList<Token> terms, String docID, String date, String title) throws ParseException, InterruptedException {
         for (int i = 0; i < terms.size(); i++) {
             if (terms.get(i).getStr().length() > 0) {
@@ -303,7 +352,7 @@ public class Parser {
     /**
      * this function is cleaning the token
      *
-     * @param token
+     * @param token that needed to be clean
      * @return
      */
     protected String cleanToken(String token) {
@@ -336,7 +385,14 @@ public class Parser {
     }
 
     // *************change public to private***********
-    //checks if the input number is indeed a number
+
+    /**
+     * checks if the input number is indeed a number
+     *
+     * @param str
+     * @return
+     * @throws ParseException
+     */
     public boolean isNumber(String str) throws ParseException {
         if (str.length() > 0 && Character.isDigit(str.charAt(0))) {
             Pattern pattern = Pattern.compile("\\d+(,\\d+)*(\\.\\d+)?");
@@ -349,7 +405,17 @@ public class Parser {
         return false;
     }
 
-
+    /**
+     * this function assist the hendler function and hendle all of the token that represent numbers
+     *
+     * @param tokens the token that being handle
+     * @param index  the index of the token
+     * @param docID  the document id fot the token
+     * @param date   the date of the document id
+     * @param title  the title of the document
+     * @return if the number handker succeeded
+     * @throws ParseException
+     */
     public boolean numberHandler(ArrayList<Token> tokens, int index, String docID, String date, String title) throws ParseException {
         String before = "";
         String current = tokens.get(index).getStr();
@@ -473,7 +539,6 @@ public class Parser {
                 }
                 ///********************************************************************************
                 //regular number
-
                 if (current.contains("/")) {
                     putTerm(current, "", docID, date, title);
                 } else if (Double.parseDouble(num) >= 1000) {
@@ -507,17 +572,23 @@ public class Parser {
                         Token currToken = new Token(current, docID, date, inTitle, rf.getSubFolder().get(0).getName());
                         if (termMap.containsKey(currToken)) {
                             if (termMap.get(currToken).containsKey(docID)) {
-                                termMap.get(currToken).put(docID, termMap.get(currToken).remove(docID) + 1);
+                                termMap.get(currToken).get(docID).set(0, String.valueOf(Integer.parseInt(termMap.get(currToken).get(docID).get(0)) + 1));
                                 return true;
 
                             } else {
-                                termMap.get(currToken).put(docID, 1);
+                                termMap.get(currToken).put(docID, new ArrayList<>());
+                                termMap.get(currToken).get(docID).set(0, "1");
+                                termMap.get(currToken).get(docID).set(1, String.valueOf(Boolean.compare(inTitle, false)));
+                                termMap.get(currToken).get(docID).set(2, date);
                                 return true;
 
                             }
                         } else {
-                            termMap.put(currToken, new HashMap<String, Integer>());
-                            termMap.get(currToken).put(docID, 1);
+                            termMap.put(currToken, new HashMap<String, ArrayList<String>>());
+                            termMap.get(currToken).put(docID, new ArrayList<>());
+                            termMap.get(currToken).get(docID).set(0, "1");
+                            termMap.get(currToken).get(docID).set(1, String.valueOf(Boolean.compare(inTitle, false)));
+                            termMap.get(currToken).get(docID).set(2, date);
                             return true;
                         }
                     }
@@ -534,49 +605,113 @@ public class Parser {
             } catch (NumberFormatException e) {
                 //wasn't able to parse term to double
             }
+        } else if (current.contains("-")) {
+            if (isNumric(current)) {
+                String[] arrToken = current.split("-");
+                String sumOne = arrToken[0].replaceAll(",", "");
+                String sumTwo = arrToken[1].replaceAll(",", "");
+                current = convertToNum(sumOne, arrToken[0]) + "-" + convertToNum(sumTwo, arrToken[1]);
+                putTerm(current, "", docID, date, title);
+            }
         }
         return false;
     }
 
+    private String convertToNum(String num, String current) throws ParseException {
+
+
+        if (Double.parseDouble(num) >= 1000) {
+            int counter = 0;
+            for (int i = 0; i < current.length(); i++) {
+                char theChar = current.charAt(i);
+                if (Character.compare(theChar, ',') == 0) {
+                    counter++;
+                }
+            }
+            // handle case of number without additional word (such as thousand, million and etc..)
+            if (counter > 0) {
+                current = format(current);///*****////
+
+                switch (counter) {
+                    case 1:
+                        current = current + "K";
+                        break;
+                    case 2:
+                        current = current + "M";
+                        break;
+                    case 3:
+                        current = current + "B";
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+        return current;
+    }
+
     /**
-     * ido create put term
+     * assisting function to number handler to put term in the term dictionary
      *
-     * @param current
-     * @param character
-     * @param docId
+     * @param current   the current tokrn that needed to be putted
+     * @param character the string that nedded to be concatenate
+     * @param docId     the document id of the term
+     * @param date      the date of the document
+     * @param title     the title of the document
      */
     private void putTerm(String current, String character, String docId, String date, String title) {
         boolean inTitle = title.contains(current + character);
         Token currToken = new Token(current + character, docId, date, inTitle, rf.getSubFolder().get(0).getName());
         if (termMap.containsKey(currToken)) {
             if (termMap.get(currToken).containsKey(docId)) {
-                termMap.get(currToken).put(docId, termMap.get(currToken).remove(docId) + 1);
+                termMap.get(currToken).get(docId).set(0, String.valueOf(Integer.parseInt(termMap.get(currToken).get(docId).get(0)) + 1));
                 updateMaxTf(current, character, docId, date, title);
                 updateWordList(current, character);
 
             } else {
-                termMap.get(currToken).put(docId, 1);
+                termMap.get(currToken).put(docId, new ArrayList<>());
+                termMap.get(currToken).get(docId).set(0, "1");
+                termMap.get(currToken).get(docId).set(1, String.valueOf(Boolean.compare(inTitle, false)));
+                termMap.get(currToken).get(docId).set(2, date);
                 updateMaxTf(current, character, docId, date, title);
                 updateWordList(current, character);
             }
 
         } else {
-            termMap.put(currToken, new HashMap<String, Integer>());
-            termMap.get(currToken).put(docId, 1);
+            termMap.put(currToken, new HashMap<String, ArrayList<String>>());
+            termMap.get(currToken).put(docId, new ArrayList<>());
+            termMap.get(currToken).get(docId).set(0, "1");
+            termMap.get(currToken).get(docId).set(1, String.valueOf(Boolean.compare(inTitle, false)));
+            termMap.get(currToken).get(docId).set(2, date);
             updateMaxTf(current, character, docId, date, title);
             updateWordList(current, character);
         }
     }
 
+    /**
+     * this function update thr tf of a term with concatenate character
+     *
+     * @param current   the term
+     * @param character
+     * @param docID     the document id of the term
+     * @param date      the date of a document
+     * @param title     the title of the document
+     */
     public void updateMaxTf(String current, String character, String docID, String date, String title) {
         if (maxTf.containsKey(docID)) {
-            maxTf.put(docID, Math.max(termMap.get(new Token(current + character, docID, date, title.contains(current + character), rf.getSubFolder().get(0).getName())).get(docID), maxTf.get(docID)));
+            maxTf.put(docID, Math.max(Integer.parseInt(termMap.get(new Token(current + character, docID, date, title.contains(current + character), rf.getSubFolder().get(0).getName())).get(docID).get(0)), maxTf.get(docID)));
 
         } else {
-            maxTf.put(docID, termMap.get(new Token(current + character, docID, date, title.contains(current + character), rf.getSubFolder().get(0).getName())).get(docID));
+            maxTf.put(docID, Integer.parseInt(termMap.get(new Token(current + character, docID, date, title.contains(current + character), rf.getSubFolder().get(0).getName())).get(docID).get(0)));
         }
     }
 
+    /**
+     * this function update the term dictionary according to a term
+     *
+     * @param current   the term that needed to be placed
+     * @param character the string that needed to be concatenated
+     */
     public void updateWordList(String current, String character) {
         if (!termsInDoc.contains(current + character)) {
             termsInDoc.add(current + character);
@@ -584,6 +719,18 @@ public class Parser {
 
     }
 
+    /**
+     * this function assist the hendler function and hendle all of the token that represent a string term
+     *
+     * @param tokens the token that needed to be handle
+     * @param index  the index of the token
+     * @param docID  the document id of the term
+     * @param date   the date of the document
+     * @param title  the title of the document
+     * @return true of false if the the token was handled
+     * @throws ParseException
+     * @throws InterruptedException
+     */
     public boolean stringHandler(ArrayList<Token> tokens, int index, String docID, String date, String title) throws ParseException, InterruptedException {
 
         String before = "";
@@ -606,28 +753,45 @@ public class Parser {
                         Token currTok = new Token(months.get(current) + "-" + after, docID, date, title.contains(months.get(current) + "-" + after), rf.getSubFolder().get(0).getName());
                         if (termMap.containsKey(currTok)) {
                             if (termMap.get(currTok).containsKey(docID)) {
-                                termMap.get(currTok).put(docID, termMap.get(currTok).get(docID) + 1);
+                                termMap.get(currTok).get(docID).set(0, String.valueOf(Integer.parseInt(termMap.get(currTok).get(docID).get(0)) + 1));
+                                return true;
                             } else {
-                                termMap.get(currTok).put(docID, 1);
+                                termMap.get(currTok).put(docID, new ArrayList<>());
+                                termMap.get(currTok).get(docID).set(0, "1");
+                                termMap.get(currTok).get(docID).set(1, String.valueOf(Boolean.compare(currTok.isInTitle(), false)));
+                                termMap.get(currTok).get(docID).set(2, date);
+                                return true;
                             }
 
                         } else {
-                            termMap.put(currTok, new HashMap<String, Integer>());
-                            termMap.get(currTok).put(docID, 1);
+                            termMap.put(currTok, new HashMap<String, ArrayList<String>>());
+                            termMap.get(currTok).put(docID, new ArrayList<>());
+                            termMap.get(currTok).get(docID).set(0, "1");
+                            termMap.get(currTok).get(docID).set(1, String.valueOf(Boolean.compare(currTok.isInTitle(), false)));
+                            termMap.get(currTok).get(docID).set(2, date);
+                            return true;
                         }
 
                     } else if (num > 1900 && isValidDate(after)) {
                         Token currTok = new Token(after + "-" + months.get(current), docID, date, title.contains(after + "-" + months.get(current)), rf.getSubFolder().get(0).getName());
                         if (months.containsKey(currTok)) {
                             if (termMap.get(currTok).containsKey(docID)) {
-                                termMap.get(currTok).put(docID, termMap.get(currTok).get(docID) + 1);
+                                termMap.get(currTok).get(docID).set(0, String.valueOf(Integer.parseInt(termMap.get(currTok).get(docID).get(0)) + 1));
+                                return true;
                             } else {
-                                termMap.get(currTok).put(docID, 1);
+                                termMap.get(currTok).put(docID, new ArrayList<>());
+                                termMap.get(currTok).get(docID).set(0, "1");
+                                termMap.get(currTok).get(docID).set(1, String.valueOf(Boolean.compare(currTok.isInTitle(), false)));
+                                termMap.get(currTok).get(docID).set(2, date);
+                                return true;
                             }
-
                         } else {
-                            termMap.put(currTok, new HashMap<String, Integer>());
-                            termMap.get(currTok).put(docID, 1);
+                            termMap.put(currTok, new HashMap<String,ArrayList<String>>());
+                            termMap.get(currTok).put(docID, new ArrayList<>());
+                            termMap.get(currTok).get(docID).set(0,"1");
+                            termMap.get(currTok).get(docID).set(1, String.valueOf(Boolean.compare(currTok.isInTitle(),false)));
+                            termMap.get(currTok).get(docID).set(2,date);
+                            return true;
                         }
                     }
 
@@ -649,11 +813,11 @@ public class Parser {
                 }
             } else if (Character.isLowerCase(current.charAt(0))) {
                 if (termMap.containsKey(new Token(current.toUpperCase(), docID, date, title.contains(current.toUpperCase()), rf.getSubFolder().get(0).getName()))) {
-                    termMap.put(new Token(current.toLowerCase(), docID, date, title.contains(current.toLowerCase()), rf.getSubFolder().get(0).getName()), termMap.remove(new Token(current.toUpperCase(), docID, date,title.contains(current.toUpperCase()), rf.getSubFolder().get(0).getName()))); // remove uppercase key and update to lowercase key
-                    putTermString(current.toLowerCase(), docID, stemming,date, title);
+                    termMap.put(new Token(current.toLowerCase(), docID, date, title.contains(current.toLowerCase()), rf.getSubFolder().get(0).getName()), termMap.remove(new Token(current.toUpperCase(), docID, date, title.contains(current.toUpperCase()), rf.getSubFolder().get(0).getName()))); // remove uppercase key and update to lowercase key
+                    putTermString(current.toLowerCase(), docID, stemming, date, title);
                     return true;
                 } else {
-                    putTermString(current.toLowerCase(), docID, stemming, date,title);
+                    putTermString(current.toLowerCase(), docID, stemming, date, title);
                     return true;
                 }
             } /*else {
@@ -688,7 +852,17 @@ public class Parser {
         return false;
     }
 
-
+    /**
+     * this fumction check if a term is a entity
+     *
+     * @param tokens   th e token that needed to be treated
+     * @param index    the index of the token
+     * @param docID    the document id of the term
+     * @param date     the date of the document
+     * @param title    the title of the document
+     * @param fileName the file name of the token
+     * @throws InterruptedException
+     */
     private void checkEntity(ArrayList<Token> tokens, int index, String docID, String date, String title, String fileName) throws InterruptedException {
         String entity = "";
         if (!stopwords.contains(tokens.get(index))) {
@@ -706,9 +880,12 @@ public class Parser {
                 if (entities.containsKey(entity.toUpperCase())) {
 
                     if (entities.get(entity.toUpperCase()).containsKey(docID)) {
-                        entities.get(entity.toUpperCase()).put(docID, entities.get(entity.toUpperCase()).get(docID) + 1);
+                        entities.get(entity.toUpperCase()).get(docID).set(0, String.valueOf(Integer.parseInt(entities.get(entity.toUpperCase()).get(docID).get(0)) + 1));
                     } else {
-                        entities.get(entity.toUpperCase()).put(docID, 1);
+                        entities.get(entity.toUpperCase()).put(docID, new ArrayList<>());
+                        entities.get(entity.toUpperCase()).get(docID).set(0, "1");
+                        entities.get(entity.toUpperCase()).get(docID).set(1, String.valueOf(Boolean.compare(title.contains(entity), false)));
+                        entities.get(entity.toUpperCase()).get(docID).set(2, date);
                     }
                     if (this.indexer.getTermDictionary().containsKey(entity.toUpperCase())) {
                         termMap.put(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName), entities.remove(entity.toUpperCase()));
@@ -717,14 +894,26 @@ public class Parser {
                     }
                 } else {
                     if (entity.split("[-:, ]").length > 1) {
-                        entities.put(entity.toUpperCase(), new HashMap<>());
-                        entities.get(entity.toUpperCase()).put(docID, 1);
+                        entities.put(entity.toUpperCase(), new HashMap<String, ArrayList<String>>());
+                        entities.get(entity.toUpperCase()).put(docID, new ArrayList<>());
+                        entities.get(entity.toUpperCase()).get(docID).set(0, "1");
+                        entities.get(entity.toUpperCase()).get(docID).set(1, String.valueOf(Boolean.compare(title.contains(entity), false)));
+                        entities.get(entity.toUpperCase()).get(docID).set(2, date);
                     }
                 }
             }
         }
     }
 
+    /**
+     * this function assist the stringHendler and it putting the term in the term map
+     *
+     * @param current the token that needed to be handle
+     * @param docID   the document id of the term
+     * @param stem    if the stemmer option was selected
+     * @param date    the date of the document
+     * @param title   the title of the document
+     */
     private void putTermString(String current, String docID, boolean stem, String date, String title) {
         if (stem == true) {
             porterStemmer porter = new porterStemmer();
@@ -741,23 +930,35 @@ public class Parser {
         Token currTok = new Token(current, docID, date, title.contains(current), rf.getSubFolder().get(0).getName());
         if (termMap.containsKey(currTok)) {
             if (termMap.get(currTok).containsKey(docID)) {
-                termMap.get(currTok).put(docID, termMap.get(currTok).remove(docID) + 1);
+                termMap.get(currTok).get(docID).set(0,String.valueOf(Integer.parseInt(termMap.get(currTok).get(docID).get(0)) + 1));
                 updateMaxTf(current, "", docID, date, title);
                 updateWordList(current, "");
             } else {
-                termMap.get(currTok).put(docID, 1);
+                termMap.get(currTok).put(docID,new ArrayList<>());
+                termMap.get(currTok).get(docID).set(0,"1");
+                termMap.get(currTok).get(docID).set(1, String.valueOf(Boolean.compare(currTok.isInTitle(),false)));
+                termMap.get(currTok).get(docID).set(2,date);
                 updateMaxTf(current, "", docID, date, title);
                 updateWordList(current, "");
             }
         } else if (current.length() > 1) {
-            termMap.put(currTok, new HashMap<>());
-            termMap.get(currTok).put(docID, 1);
+            termMap.put(currTok, new HashMap<String,ArrayList<String>>());
+            termMap.get(currTok).put(docID, new ArrayList<>());
+            termMap.get(currTok).get(docID).set(0,"1");
+            termMap.get(currTok).get(docID).set(1, String.valueOf(Boolean.compare(currTok.isInTitle(),false)));
+            termMap.get(currTok).get(docID).set(2,date);
             updateMaxTf(current, "", docID, date, title);
             updateWordList(current, "");
         }
 
     }
 
+    /**
+     * this function check if the string is a valid date
+     *
+     * @param dateStr the string that needed to be checked
+     * @return
+     */
     public boolean isValidDate(String dateStr) {
         DateFormat sdf = new SimpleDateFormat("YYYY");
         sdf.setLenient(false);
@@ -770,10 +971,10 @@ public class Parser {
     }
 
     /**
-     * ido add this function that change the format of the number
+     * this function that change the format of the number
      *
-     * @param current
-     * @return
+     * @param current the number
+     * @return the string after the format
      * @throws ParseException
      */
     private String format(String current) throws ParseException {
@@ -786,14 +987,29 @@ public class Parser {
             return String.format("%s", d);
     }
 
-    public Map<Token, Map<String, Integer>> getTermMap() {
+    /**
+     * this function is a getter that returns the term map
+     *
+     * @return the term map
+     */
+    public Map<Token, Map<String, ArrayList<String>>> getTermMap() {
         return termMap;
     }
 
-    public void setTermMap(Map<Token, Map<String, Integer>> termMap) {
+    /**
+     * this function is a setter that set the term map
+     *
+     * @param termMap the term map that needed to be sets
+     */
+    public void setTermMap(Map<Token, Map<String, ArrayList<String>>> termMap) {
         this.termMap = termMap;
     }
 
+    /**
+     * this function is a getter that gets the map of the max tf
+     *
+     * @return the map of the max tf
+     */
     public Map<String, Integer> getMaxTf() {
         return maxTf;
     }
@@ -802,10 +1018,20 @@ public class Parser {
         this.maxTf = maxTf;
     }
 
+    /**
+     * this functuib is a getter that get the map of the word counter
+     *
+     * @return the map of the word counter
+     */
     public Map<String, Integer> getWordCounter() {
         return wordCounter;
     }
 
+    /**
+     * this function is a setter that set the eordCounter map.
+     *
+     * @param wordCounter
+     */
     public void setWordCounter(Map<String, Integer> wordCounter) {
         this.wordCounter = wordCounter;
     }

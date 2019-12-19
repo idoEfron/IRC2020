@@ -40,6 +40,7 @@ public class Controller {
 
     @FXML
     private void startIR() throws IOException {
+        long startTime = System.currentTimeMillis();
         boolean stem = stemmerCheckB.isSelected();
         String postPath = txtPosting.getText();
         String corpusPath = txtBrowse.getText();
@@ -66,9 +67,14 @@ public class Controller {
                 return;
             }
             int[] corpusInfo = viewModel.start(stem, postPath, corpusPath);
+            long endTime = System.currentTimeMillis();
+            if(corpusInfo.length==1){
+                showAlert("file already exist please select the reset button");
+                return;
 
+            }
             showAlert("numbers of terms = " + corpusInfo[0] + "\nnumber of documents = " + corpusInfo[1]
-                    + "\nrunTime of the program = " + 0);
+                    + "\nrunTime of the program = " + ((endTime - startTime) / 1000) + " seconds");
         }
     }
 
@@ -84,6 +90,7 @@ public class Controller {
             showAlert("please enter correct posting path");
             return;
         } else {
+            Indexer.clearMap();
             File file = new File(txtPosting.getText());
             if (file.list().length > 0) {
                 viewModel.delete(file);
@@ -115,8 +122,6 @@ public class Controller {
         File selectedDirectory = directoryChooser.showDialog(null);
         if (selectedDirectory != null) {
             txt.setText(selectedDirectory.getAbsolutePath());
-        } else {
-            System.out.println("file is not valid");
         }
     }
 
@@ -127,8 +132,8 @@ public class Controller {
         if (postPath != null) {
             file = new File(txtPosting.getText());
         }
-        if (postPath.length() > 0 && file.isDirectory() && file != null) {
-            dictionary = viewModel.displayDictionary(stemmerCheckB.isSelected(), postPath);
+        if (txtPosting.getText().length() > 0 && file != null) {
+            dictionary = viewModel.displayDictionary(stemmerCheckB.isSelected(), txtPosting.getText());
             if (dictionary.length() > 0) {
                 TextArea textArea = new TextArea();
                 textArea.setText(dictionary);
@@ -158,7 +163,7 @@ public class Controller {
     @FXML
     private void loadDictionary() throws IOException {
         postPath = txtPosting.getText();
-        if (postPath == null||postPath.equals("")) {
+        if (postPath == null || postPath.equals("")) {
             showAlert("please enter posting path");
             return;
         } else {

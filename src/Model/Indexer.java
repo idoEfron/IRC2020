@@ -21,13 +21,28 @@ public class Indexer {
     private static int fileNum =0;
     private static int folderNum=0;
 
+    /**
+     * this function is a getter
+     * @return the size of the termDictinary
+     */
     public int getNumberOfTerms(){
         return termDictionary.size();
     }
+
+    /**
+     * this function is a getter that returns the docDictionary size
+     * @return docDictionary size
+     */
     public  int getNumberOrDocuments(){
         return docDictionary.size();
     }
 
+    /**
+     * this function is a constructor of indexer
+     * @param stem if stamming option is selected
+     * @param postingPath  the path of posting file location
+     * @throws IOException exception
+     */
     public Indexer(boolean stem, String postingPath) throws IOException {
 
         if(!stem){
@@ -41,6 +56,13 @@ public class Indexer {
 
     }
 
+    /**
+     * this function puts the data of the parser to files of posting and put data on the memory
+     * @param p the parser
+     * @return true or false if the block was index successfuly
+     * @throws IOException
+     * @throws InterruptedException
+     */
     public boolean addBlock(Parser p) throws IOException, InterruptedException {
         boolean createdFile;
         File file = null;
@@ -58,20 +80,7 @@ public class Indexer {
         Map <String ,List<String>> lines = new HashMap<>();
 
         for (Token tkn : tknSet) {
-            //System.out.println(countLines(currentFile.getAbsolutePath()));
             if(Character.isLetter(tkn.getStr().charAt(0))){
-                /*currentFile = new File(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getDocId()+".txt");
-                if(!currentFile.exists()){
-                    try{
-                        currentFile.createNewFile();
-                    }
-                    catch(IOException e){
-                        System.out.println(currentFile.getPath());
-                    }
-                }
-                filewriter = new FileWriter(currentFile, true);
-                bw = new BufferedWriter(filewriter);
-                writer = new PrintWriter(bw);*/
                 if(lines.containsKey(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getFile()+".txt")){
                     lines.get(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getFile()+".txt").add(tkn.getStr() +" : ");
                     Set <Map.Entry<String,Integer>> map = termMap.get(tkn).entrySet();
@@ -93,14 +102,6 @@ public class Indexer {
 
             }
             else{
-                /*currentFile = new File(subFolderTerms.getPath()+"/"+"special/"+tkn.getDocId() +".txt");
-                if(!currentFile.exists()){
-                    currentFile.createNewFile();
-                }
-                termDictionary.put(tkn.getStr(),subFolderTerms.getPath()+"/"+"special/"+"special_merged.txt");
-                filewriter = new FileWriter(currentFile, true);
-                bw = new BufferedWriter(filewriter);
-                writer = new PrintWriter(bw);*/
                 if(lines.containsKey(subFolderTerms.getPath()+"/"+"special/"+tkn.getFile()+".txt")){
                     lines.get(subFolderTerms.getPath()+"/"+"special/"+tkn.getFile()+".txt").add(tkn.getStr() +" : ");
                     Set <Map.Entry<String,Integer>> map = termMap.get(tkn).entrySet();
@@ -171,25 +172,15 @@ public class Indexer {
             writer.close();
         }
 
-        //ArrayList<String> termDic = new ArrayList<>();
-        /*ArrayList<String> docDic = new ArrayList<>();
-        for(Map.Entry<String,String> me: docDictionary.entrySet()){
-            docDic.add(me.getKey() +" : "+me.getValue()+"\n");
-        }*/
-        /*for(Map.Entry<String,String> me: termDictionary.entrySet()){
-            termDic.add(me.getKey() +" : "+me.getValue()+"\n");
-        }*/
-
-        /*mutex.acquire();
-        writeRaw(docDic,(subFolderDocs.getPath()+"/docDictionary/"+folderNum+".txt"));
-        writeRaw(termDic,(subFolderTerms.getPath()+"/termDictionary/"+fileNum+".txt"));
-        fileNum++;
-        folderNum++;
-        mutex.release();
-        docDic.clear();*/
         return true;
     }
 
+    /**
+     * sum all of the tf of a term in all of the corpus
+     * @param term the current term that we want to know the tf
+     * @param values all of the tf in different in documents
+     * @return the tf of the term
+     */
     private Integer sumTf(String term,Collection<Integer> values) {
         Integer sum;
         if((termDictionary.containsKey(term.toLowerCase()) && termDictionary.get(term.toLowerCase()).size()>0)){
@@ -214,6 +205,12 @@ public class Indexer {
 
     //https://stackoverflow.com/questions/453018/number-of-lines-in-a-file-in-java
 
+    /**
+     *
+     * @param filename
+     * @return
+     * @throws IOException
+     */
     public int countLines(String filename) throws IOException {
         InputStream is = new BufferedInputStream(new FileInputStream(filename));
         try {
@@ -254,7 +251,12 @@ public class Indexer {
     }
 
 
-
+    /**
+     *
+     * @param term
+     * @param path
+     * @return
+     */
     //https://stackoverflow.com/questions/5600422/method-to-find-string-inside-of-the-text-file-then-getting-the-following-lines/45168182
     public int getLineNum(String term, String path) {
         File file = new File(path);
@@ -277,15 +279,12 @@ public class Indexer {
         return -1;
     }
 
-    public void addToLine(File file, int line, File folder) throws IOException {
-
-
-        List<String> lines = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
-        Collections.sort(lines);
-        Files.write(file.toPath(), lines, StandardCharsets.UTF_8);
-
-    }
-
+    /**
+     *this function write the records to a file/
+     * @param records
+     * @param filePath
+     * @throws IOException
+     */
     //https://stackoverflow.com/questions/1062113/fastest-way-to-write-huge-data-in-text-file-java
     private static void writeRaw(List<String> records,String filePath) throws IOException {
         File file = new File( filePath );
@@ -294,6 +293,12 @@ public class Indexer {
         write(records, writer);
     }
 
+    /**
+     * this function is a continues function to WrithRaw.
+     * @param records the records that we need to save.
+     * @param writer the writer option that saving the record.
+     * @throws IOException
+     */
     private static void write(List<String> records, Writer writer) throws IOException {
         for (String record: records) {
             writer.write(record);
@@ -302,13 +307,27 @@ public class Indexer {
         writer.close();
     }
 
-
+    /**
+     *a getter that return the termDictionary
+     * @return the termDictionary
+     */
     public static Map<String, Map<String,Integer>> getTermDictionary() {
         return termDictionary;
     }
+
+    /**
+     * this function is cleaning the data structure
+     */
     public static void clearMap(){
         termDictionary.clear();
+        docDictionary.clear();
+
     }
+
+    /**
+     * this function is a setter that save the term Dictionary
+     * @param termDictionary
+     */
     public static void setTermDictionary(Map<String, Map<String, Integer>> termDictionary) {
         Indexer.termDictionary = termDictionary;
     }
