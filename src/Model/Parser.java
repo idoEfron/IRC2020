@@ -237,7 +237,7 @@ public class Parser {
                                             token = cleanToken(afterRemoving[j]);
                                             if (token.length() > 0) {
                                                 afterCleaning.add(new Token(token, docNo, date, title.contains(token), rf.getSubFolder().get(0).getName()));
-                                            }//token,token.length(),docList.get(i).indexOf(token)
+                                            }
                                         }
                                     }
                                 } else if (afterRemoving.length == 1) {
