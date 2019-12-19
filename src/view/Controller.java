@@ -37,7 +37,10 @@ public class Controller {
     @FXML
     private javafx.scene.control.CheckBox stemmerCheckB;
 
-
+    /**
+     * this function start the
+     * @throws IOException
+     */
     @FXML
     private void startIR() throws IOException {
         long startTime = System.currentTimeMillis();
