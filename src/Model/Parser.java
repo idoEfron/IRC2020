@@ -576,19 +576,19 @@ public class Parser {
                                 return true;
 
                             } else {
-                                termMap.get(currToken).put(docID, new ArrayList<>());
-                                termMap.get(currToken).get(docID).set(0, "1");
-                                termMap.get(currToken).get(docID).set(1, String.valueOf(Boolean.compare(inTitle, false)));
-                                termMap.get(currToken).get(docID).set(2, date);
+                                termMap.get(currToken).put(docID, new ArrayList<>(3));
+                                termMap.get(currToken).get(docID).add(0, "1");
+                                termMap.get(currToken).get(docID).add(1, String.valueOf(Boolean.compare(inTitle, false)));
+                                termMap.get(currToken).get(docID).add(2, date);
                                 return true;
 
                             }
                         } else {
                             termMap.put(currToken, new HashMap<String, ArrayList<String>>());
-                            termMap.get(currToken).put(docID, new ArrayList<>());
-                            termMap.get(currToken).get(docID).set(0, "1");
-                            termMap.get(currToken).get(docID).set(1, String.valueOf(Boolean.compare(inTitle, false)));
-                            termMap.get(currToken).get(docID).set(2, date);
+                            termMap.get(currToken).put(docID, new ArrayList<>(3));
+                            termMap.get(currToken).get(docID).add(0, "1");
+                            termMap.get(currToken).get(docID).add(1, String.valueOf(Boolean.compare(inTitle, false)));
+                            termMap.get(currToken).get(docID).add(2, date);
                             return true;
                         }
                     }
@@ -669,20 +669,20 @@ public class Parser {
                 updateWordList(current, character);
 
             } else {
-                termMap.get(currToken).put(docId, new ArrayList<>());
-                termMap.get(currToken).get(docId).set(0, "1");
-                termMap.get(currToken).get(docId).set(1, String.valueOf(Boolean.compare(inTitle, false)));
-                termMap.get(currToken).get(docId).set(2, date);
+                termMap.get(currToken).put(docId, new ArrayList<>(3));
+                termMap.get(currToken).get(docId).add(0, "1");
+                termMap.get(currToken).get(docId).add(1, String.valueOf(Boolean.compare(inTitle, false)));
+                termMap.get(currToken).get(docId).add(2, date);
                 updateMaxTf(current, character, docId, date, title);
                 updateWordList(current, character);
             }
 
         } else {
             termMap.put(currToken, new HashMap<String, ArrayList<String>>());
-            termMap.get(currToken).put(docId, new ArrayList<>());
-            termMap.get(currToken).get(docId).set(0, "1");
-            termMap.get(currToken).get(docId).set(1, String.valueOf(Boolean.compare(inTitle, false)));
-            termMap.get(currToken).get(docId).set(2, date);
+            termMap.get(currToken).put(docId, new ArrayList<>(3));
+            termMap.get(currToken).get(docId).add(0, "1");
+            termMap.get(currToken).get(docId).add(1, String.valueOf(Boolean.compare(inTitle, false)));
+            termMap.get(currToken).get(docId).add(2, date);
             updateMaxTf(current, character, docId, date, title);
             updateWordList(current, character);
         }
@@ -756,19 +756,19 @@ public class Parser {
                                 termMap.get(currTok).get(docID).set(0, String.valueOf(Integer.parseInt(termMap.get(currTok).get(docID).get(0)) + 1));
                                 return true;
                             } else {
-                                termMap.get(currTok).put(docID, new ArrayList<>());
-                                termMap.get(currTok).get(docID).set(0, "1");
-                                termMap.get(currTok).get(docID).set(1, String.valueOf(Boolean.compare(currTok.isInTitle(), false)));
-                                termMap.get(currTok).get(docID).set(2, date);
+                                termMap.get(currTok).put(docID, new ArrayList<>(3));
+                                termMap.get(currTok).get(docID).add(0, "1");
+                                termMap.get(currTok).get(docID).add(1, String.valueOf(Boolean.compare(currTok.isInTitle(), false)));
+                                termMap.get(currTok).get(docID).add(2, date);
                                 return true;
                             }
 
                         } else {
                             termMap.put(currTok, new HashMap<String, ArrayList<String>>());
-                            termMap.get(currTok).put(docID, new ArrayList<>());
-                            termMap.get(currTok).get(docID).set(0, "1");
-                            termMap.get(currTok).get(docID).set(1, String.valueOf(Boolean.compare(currTok.isInTitle(), false)));
-                            termMap.get(currTok).get(docID).set(2, date);
+                            termMap.get(currTok).put(docID, new ArrayList<>(3));
+                            termMap.get(currTok).get(docID).add(0, "1");
+                            termMap.get(currTok).get(docID).add(1, String.valueOf(Boolean.compare(currTok.isInTitle(), false)));
+                            termMap.get(currTok).get(docID).add(2, date);
                             return true;
                         }
 
@@ -779,18 +779,18 @@ public class Parser {
                                 termMap.get(currTok).get(docID).set(0, String.valueOf(Integer.parseInt(termMap.get(currTok).get(docID).get(0)) + 1));
                                 return true;
                             } else {
-                                termMap.get(currTok).put(docID, new ArrayList<>());
-                                termMap.get(currTok).get(docID).set(0, "1");
-                                termMap.get(currTok).get(docID).set(1, String.valueOf(Boolean.compare(currTok.isInTitle(), false)));
-                                termMap.get(currTok).get(docID).set(2, date);
+                                termMap.get(currTok).put(docID, new ArrayList<>(3));
+                                termMap.get(currTok).get(docID).add(0, "1");
+                                termMap.get(currTok).get(docID).add(1, String.valueOf(Boolean.compare(currTok.isInTitle(), false)));
+                                termMap.get(currTok).get(docID).add(2, date);
                                 return true;
                             }
                         } else {
                             termMap.put(currTok, new HashMap<String,ArrayList<String>>());
-                            termMap.get(currTok).put(docID, new ArrayList<>());
-                            termMap.get(currTok).get(docID).set(0,"1");
-                            termMap.get(currTok).get(docID).set(1, String.valueOf(Boolean.compare(currTok.isInTitle(),false)));
-                            termMap.get(currTok).get(docID).set(2,date);
+                            termMap.get(currTok).put(docID, new ArrayList<>(3));
+                            termMap.get(currTok).get(docID).add(0,"1");
+                            termMap.get(currTok).get(docID).add(1, String.valueOf(Boolean.compare(currTok.isInTitle(),false)));
+                            termMap.get(currTok).get(docID).add(2,date);
                             return true;
                         }
                     }
@@ -882,10 +882,10 @@ public class Parser {
                     if (entities.get(entity.toUpperCase()).containsKey(docID)) {
                         entities.get(entity.toUpperCase()).get(docID).set(0, String.valueOf(Integer.parseInt(entities.get(entity.toUpperCase()).get(docID).get(0)) + 1));
                     } else {
-                        entities.get(entity.toUpperCase()).put(docID, new ArrayList<>());
-                        entities.get(entity.toUpperCase()).get(docID).set(0, "1");
-                        entities.get(entity.toUpperCase()).get(docID).set(1, String.valueOf(Boolean.compare(title.contains(entity), false)));
-                        entities.get(entity.toUpperCase()).get(docID).set(2, date);
+                        entities.get(entity.toUpperCase()).put(docID, new ArrayList<>(3));
+                        entities.get(entity.toUpperCase()).get(docID).add(0, "1");
+                        entities.get(entity.toUpperCase()).get(docID).add(1, String.valueOf(Boolean.compare(title.contains(entity), false)));
+                        entities.get(entity.toUpperCase()).get(docID).add(2, date);
                     }
                     if (this.indexer.getTermDictionary().containsKey(entity.toUpperCase())) {
                         termMap.put(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName), entities.remove(entity.toUpperCase()));
@@ -895,10 +895,10 @@ public class Parser {
                 } else {
                     if (entity.split("[-:, ]").length > 1) {
                         entities.put(entity.toUpperCase(), new HashMap<String, ArrayList<String>>());
-                        entities.get(entity.toUpperCase()).put(docID, new ArrayList<>());
-                        entities.get(entity.toUpperCase()).get(docID).set(0, "1");
-                        entities.get(entity.toUpperCase()).get(docID).set(1, String.valueOf(Boolean.compare(title.contains(entity), false)));
-                        entities.get(entity.toUpperCase()).get(docID).set(2, date);
+                        entities.get(entity.toUpperCase()).put(docID, new ArrayList<String>(3));
+                        entities.get(entity.toUpperCase()).get(docID).add(0, "1");
+                        entities.get(entity.toUpperCase()).get(docID).add(1, String.valueOf(Boolean.compare(title.contains(entity), false)));
+                        entities.get(entity.toUpperCase()).get(docID).add(2, date);
                     }
                 }
             }
@@ -934,19 +934,19 @@ public class Parser {
                 updateMaxTf(current, "", docID, date, title);
                 updateWordList(current, "");
             } else {
-                termMap.get(currTok).put(docID,new ArrayList<>());
-                termMap.get(currTok).get(docID).set(0,"1");
-                termMap.get(currTok).get(docID).set(1, String.valueOf(Boolean.compare(currTok.isInTitle(),false)));
-                termMap.get(currTok).get(docID).set(2,date);
+                termMap.get(currTok).put(docID,new ArrayList<>(3));
+                termMap.get(currTok).get(docID).add(0,"1");
+                termMap.get(currTok).get(docID).add(1, String.valueOf(Boolean.compare(currTok.isInTitle(),false)));
+                termMap.get(currTok).get(docID).add(2,date);
                 updateMaxTf(current, "", docID, date, title);
                 updateWordList(current, "");
             }
         } else if (current.length() > 1) {
             termMap.put(currTok, new HashMap<String,ArrayList<String>>());
-            termMap.get(currTok).put(docID, new ArrayList<>());
-            termMap.get(currTok).get(docID).set(0,"1");
-            termMap.get(currTok).get(docID).set(1, String.valueOf(Boolean.compare(currTok.isInTitle(),false)));
-            termMap.get(currTok).get(docID).set(2,date);
+            termMap.get(currTok).put(docID, new ArrayList<>(3));
+            termMap.get(currTok).get(docID).add(0,"1");
+            termMap.get(currTok).get(docID).add(1, String.valueOf(Boolean.compare(currTok.isInTitle(),false)));
+            termMap.get(currTok).get(docID).add(2,date);
             updateMaxTf(current, "", docID, date, title);
             updateWordList(current, "");
         }
