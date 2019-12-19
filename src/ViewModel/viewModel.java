@@ -75,7 +75,7 @@ public class viewModel {
             for (File SubFolder : listOfSubFolders) {
                 if (SubFolder.isDirectory()) {
                     files.add(SubFolder);
-                    if (files.size() == 5) {
+                    if (files.size() == 10) {
                         ReadFile read = new ReadFile(new ArrayList<>(files), new Indexer(stem, postPath), stem, corpusPath);
                         executor.execute(new Thread(read));
                         files.clear();
