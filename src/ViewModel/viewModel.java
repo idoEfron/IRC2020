@@ -4,10 +4,7 @@ import Model.*;
 import Model.Merge;
 import Model.ReadFile;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -105,9 +102,14 @@ public class viewModel {
 
 
         Indexer index = new Indexer(stem, postPath);
-        Map<String,Map<String,Integer>> map = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        map.putAll(Indexer.getTermDictionary());
-        index.setTermDictionary(map);
+        File file = new File( postPath + "/termDictionary.txt" );
+        file.createNewFile();
+        FileWriter writer = new FileWriter(file);
+        for (Map.Entry<String,Map<String,Integer>> records : Indexer.getTermDictionary().entrySet()) {
+            writer.write(records.getKey()+">"+records.getValue().keySet().toArray()[0]+">"+records.getValue().values().toArray()[0]+"\n");
+        }
+        writer.flush();
+        writer.close();
         int[] corpusInfo = new int[2];
         corpusInfo[0] = index.getNumberOfTerms();
         corpusInfo[1] = index.getNumberOrDocuments();
@@ -148,10 +150,10 @@ public class viewModel {
         Indexer index = new Indexer(selected, postPath);
         BufferedReader br = new BufferedReader(new FileReader(file));
         String st;
-        Map<String, Map<String, Integer>> termDictionary = new HashMap<>();
+        Map<String, Map<String, Integer>> termDictionary = new TreeMap<>();
         index.clearMap();
         while ((st = br.readLine()) != null) {
-            String[] term = st.split(",");
+            String[] term = st.split(">");
             if(term.length==3) {
                 termDictionary.put(term[0], new HashMap<>());
                 termDictionary.get(term[0]).put(term[1], Integer.parseInt(term[2]));
