@@ -15,19 +15,10 @@ public class Merge implements Runnable {
 
     File[] directory;
 
-    /**
-     * this is the constructor of this class
-     * @param files
-     */
     public Merge(File[] files){
         directory = files;
     }
 
-    /**
-     * this function merge all the files in the folder to one folder
-     * @param files the list of files
-     * @throws IOException
-     */
     private void merge(File[] files) throws IOException {
         List<String> mergedText = new ArrayList<>();
         String parent = files[0].getParent();
@@ -61,13 +52,19 @@ public class Merge implements Runnable {
                             }
                         }
                         else{
-                            mergeHelper(mergedText, i, term);
+                            if(term.toLowerCase().equals(mergedText.get(i-1).substring(0,mergedText.get(i-1).indexOf(':')).toLowerCase())){
+                                String suffix = mergedText.remove(i).substring(mergedText.get(i-1).indexOf(": ")+2);
+                                mergedText.set(i-1,mergedText.get(i-1)+suffix);
+                            }
                         }
                     }
                 }
                 else{
                     if(i>0){
-                        mergeHelper(mergedText, i, term);
+                        if(term.toLowerCase().equals(mergedText.get(i-1).substring(0,mergedText.get(i-1).indexOf(':')).toLowerCase())){
+                            String suffix = mergedText.remove(i).substring(mergedText.get(i-1).indexOf(": ")+2);
+                            mergedText.set(i-1,mergedText.get(i-1)+suffix);
+                        }
                     }
                 }
 
@@ -77,19 +74,6 @@ public class Merge implements Runnable {
         }
     }
 
-    private void mergeHelper(List<String> mergedText, int i, String term) {
-        if(term.toLowerCase().equals(mergedText.get(i-1).substring(0,mergedText.get(i-1).indexOf(':')).toLowerCase())){
-            String suffix = mergedText.remove(i).substring(mergedText.get(i-1).indexOf(": ")+2);
-            mergedText.set(i-1,mergedText.get(i-1)+suffix);
-        }
-    }
-
-    /**
-     * this function write in in a text file all the records
-     * @param records the records that needed to be saved
-     * @param filePath the file path
-     * @throws IOException
-     */
     private static void writeRaw(List<String> records,String filePath) throws IOException {
         File file = new File( filePath );
         file.createNewFile();
@@ -97,12 +81,6 @@ public class Merge implements Runnable {
         write(records, writer);
     }
 
-    /**
-     * this function assisting to the writeRaw and saving the file object
-     * @param records the recodes list that needed to be saved
-     * @param writer the object that save the object
-     * @throws IOException
-     */
     private static void write(List<String> records, Writer writer) throws IOException {
         for (String record: records) {
             writer.write(record+'\n');
@@ -111,9 +89,6 @@ public class Merge implements Runnable {
         writer.close();
     }
 
-    /**
-     * this fumction tun the merge function
-     */
     @Override
     public void run() {
         try {
