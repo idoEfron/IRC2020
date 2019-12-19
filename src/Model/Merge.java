@@ -77,6 +77,13 @@ public class Merge implements Runnable {
         }
     }
 
+    /**
+     * this is a helper function to concatenate duplicate terms
+     * @param mergedText all file lines
+     * @param i index
+     * @param term the term we want to merge its duplicates
+     */
+
     private void mergeHelper(List<String> mergedText, int i, String term) {
         if(term.toLowerCase().equals(mergedText.get(i-1).substring(0,mergedText.get(i-1).indexOf(':')).toLowerCase())){
             String suffix = mergedText.remove(i).substring(mergedText.get(i-1).indexOf(": ")+2);
@@ -112,7 +119,7 @@ public class Merge implements Runnable {
     }
 
     /**
-     * this fumction tun the merge function
+     * this fumction run the merge function
      */
     @Override
     public void run() {

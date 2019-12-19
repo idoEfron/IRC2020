@@ -203,7 +203,7 @@ public class Parser {
                     } catch (StringIndexOutOfBoundsException e) {
                         System.out.println("problem in file: " + docNo);
                     }
-                    txt = txt.replaceAll("[\\<*?\\>|\\p{Ps}|\\p{Pe}]", " ");
+                    txt = txt.replaceAll("\\<.*?\\>|\\p{Ps}|\\p{Pe}", " ");
                     txt = txt.replace("--", " ");
                     String[] tokens = txt.split("\\s+|\n");
                     ArrayList<Token> afterCleaning = new ArrayList<>();
@@ -720,6 +720,59 @@ public class Parser {
     }
 
     /**
+     * this function check if a term is a entity
+     *
+     * @param tokens   th e token that needed to be treated
+     * @param index    the index of the token
+     * @param docID    the document id of the term
+     * @param date     the date of the document
+     * @param title    the title of the document
+     * @param fileName the file name of the token
+     * @throws InterruptedException
+     */
+    private void checkEntity(ArrayList<Token> tokens, int index, String docID, String date, String title, String fileName) throws InterruptedException {
+        String entity = "";
+        if (!stopwords.contains(tokens.get(index))) {
+            while (tokens.size() > 0 && index < tokens.size() && tokens.get(index).getLength() > 0 && Character.isUpperCase(tokens.get(index).getStr().charAt(0))) {
+                if ((index + 1) < tokens.size() && tokens.get(index + 1).getLength() > 0 && Character.isUpperCase(tokens.get(index + 1).getStr().charAt(0))) {
+                    entity = entity + tokens.get(index).getStr() + " ";
+                } else {
+                    entity = entity + tokens.get(index).getStr();
+                }
+
+                index++;
+            }
+
+            if (tokens.size() > 0 && entity.split(" ").length < 5) {
+                if (entities.containsKey(entity.toUpperCase())) {
+
+                    if (entities.get(entity.toUpperCase()).containsKey(docID)) {
+                        entities.get(entity.toUpperCase()).get(docID).set(0, String.valueOf(Integer.parseInt(entities.get(entity.toUpperCase()).get(docID).get(0)) + 1));
+                    } else {
+                        entities.get(entity.toUpperCase()).put(docID, new ArrayList<>(3));
+                        entities.get(entity.toUpperCase()).get(docID).add(0, "1");
+                        entities.get(entity.toUpperCase()).get(docID).add(1, String.valueOf(Boolean.compare(title.contains(entity), false)));
+                        entities.get(entity.toUpperCase()).get(docID).add(2, date);
+                    }
+                    if (this.indexer.getTermDictionary().containsKey(entity.toUpperCase())) {
+                        termMap.put(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName), entities.remove(entity.toUpperCase()));
+                    } else if (entities.get(entity.toUpperCase()).size() >= 2) {
+                        termMap.put(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName), entities.remove(entity.toUpperCase()));
+                    }
+                } else {
+                    if (entity.split("[-:, ]").length > 1) {
+                        entities.put(entity.toUpperCase(), new HashMap<String, ArrayList<String>>());
+                        entities.get(entity.toUpperCase()).put(docID, new ArrayList<String>(3));
+                        entities.get(entity.toUpperCase()).get(docID).add(0, "1");
+                        entities.get(entity.toUpperCase()).get(docID).add(1, String.valueOf(Boolean.compare(title.contains(entity), false)));
+                        entities.get(entity.toUpperCase()).get(docID).add(2, date);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * this function assist the hendler function and hendle all of the token that represent a string term
      *
      * @param tokens the token that needed to be handle
@@ -825,84 +878,70 @@ public class Parser {
                 return true;
             }*/
         }
-        if (stopwords.contains(current.toLowerCase()) && Character.isUpperCase(current.charAt(0))) {
+        if (stopwords.contains(current.toLowerCase())) {
+
             String newStopWord = current;
             boolean flag = false;
             boolean allStopwords = true;
             int stopIndex = index;
-            while (stopIndex + 1 < tokens.size() && !flag) {
-                stopIndex = stopIndex + 1;
-                String afterStop = tokens.get(stopIndex).getStr();
-                if (allStopwords && stopwords.contains(afterStop.toLowerCase())) {
-                    allStopwords = true;
-                } else {
-                    allStopwords = false;
+            if(current.equalsIgnoreCase("between")){
+                if(index+3<tokens.size() && tokens.get(index+2).getStr().equalsIgnoreCase("and") && isNumber(tokens.get(index+1).getStr()) && isNumber(tokens.get(index+3).getStr())){
+                    putTermString(tokens.get(index+1).getStr()+"-"+tokens.get(index+3).getStr(), docID, stemming, date, title);
+                    return true;
                 }
-                if (Character.isUpperCase(afterStop.charAt(0))) {
-                    newStopWord = newStopWord + " " + afterStop;
-                } else {
-                    flag = true;
-                }
+                else if(index+5<tokens.size()){
+                    if(tokens.get(index+3).getStr().equalsIgnoreCase("and")){
+                        if(isNumber(tokens.get(index+1).getStr()) && isNumber(tokens.get(index+4).getStr())){
+                            if(tokens.get(index+2).getStr().equalsIgnoreCase("million") || tokens.get(index+2).getStr().equalsIgnoreCase("billion")
+                                    || tokens.get(index+2).getStr().equalsIgnoreCase("thousand")){
+                                if(tokens.get(index+5).getStr().equalsIgnoreCase("thousand") || tokens.get(index+5).getStr().equalsIgnoreCase("million")
+                                        || tokens.get(index+5).getStr().equalsIgnoreCase("billion")){
+                                    ////putTermString(addMeasure(tokens.get(index+1).getStr(),token.get(index+2).getStr())+"-"+addMeasure(tokens.get(index+4).getStr(),tokens.get(index+5)), docID, stemming, date, title);
+                                    return true;
+                                }
+                                else{
+                                    //putTermString(addMeasure(tokens.get(index+1).getStr(),token.get(index+2).getStr())+"-"+tokens.get(index+4).getStr(), docID, stemming, date, title);
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                    else if(tokens.get(index+2).getStr().equalsIgnoreCase("and")){
+                        if(isNumber(tokens.get(index+1).getStr()) && isNumber(tokens.get(index+3).getStr())){
+                            if(tokens.get(index+4).getStr().equalsIgnoreCase("million") || tokens.get(index+4).getStr().equalsIgnoreCase("billion") || tokens.get(index+4).getStr().equalsIgnoreCase("thousand")){
+                                    //putTermString(tokens.get(index+1).getStr()+"-"+addMeasure(tokens.get(index+3).getStr(),tokens.get(index+4)), docID, stemming, date, title);
+                                    return true;
+                                }
+                                else{
+                                    //putTermString(tokens.get(index+1).getStr()+"-"+tokens.get(index+3).getStr(), docID, stemming, date, title);
+                                    return true;
+                                }
+                            }
+                        }
+                    }
             }
-            if (!newStopWord.equals(current) && !allStopwords) {
-                putTermString(newStopWord, docID, stemming, date, title);
-                return true;
+            if( Character.isUpperCase(current.charAt(0))){
+                while (stopIndex + 1 < tokens.size() && !flag) {
+                    stopIndex = stopIndex + 1;
+                    String afterStop = tokens.get(stopIndex).getStr();
+                    if (allStopwords && stopwords.contains(afterStop.toLowerCase())) {
+                        allStopwords = true;
+                    } else {
+                        allStopwords = false;
+                    }
+                    if (Character.isUpperCase(afterStop.charAt(0))) {
+                        newStopWord = newStopWord + " " + afterStop;
+                    } else {
+                        flag = true;
+                    }
+                }
+                if (!newStopWord.equals(current) && !allStopwords) {
+                    putTermString(newStopWord, docID, stemming, date, title);
+                    return true;
+                }
             }
         }
         return false;
-    }
-
-    /**
-     * this fumction check if a term is a entity
-     *
-     * @param tokens   th e token that needed to be treated
-     * @param index    the index of the token
-     * @param docID    the document id of the term
-     * @param date     the date of the document
-     * @param title    the title of the document
-     * @param fileName the file name of the token
-     * @throws InterruptedException
-     */
-    private void checkEntity(ArrayList<Token> tokens, int index, String docID, String date, String title, String fileName) throws InterruptedException {
-        String entity = "";
-        if (!stopwords.contains(tokens.get(index))) {
-            while (tokens.size() > 0 && index < tokens.size() && tokens.get(index).getLength() > 0 && Character.isUpperCase(tokens.get(index).getStr().charAt(0))) {
-                if ((index + 1) < tokens.size() && tokens.get(index + 1).getLength() > 0 && Character.isUpperCase(tokens.get(index + 1).getStr().charAt(0))) {
-                    entity = entity + tokens.get(index).getStr() + " ";
-                } else {
-                    entity = entity + tokens.get(index).getStr();
-                }
-
-                index++;
-            }
-
-            if (tokens.size() > 0 && entity.split(" ").length < 5) {
-                if (entities.containsKey(entity.toUpperCase())) {
-
-                    if (entities.get(entity.toUpperCase()).containsKey(docID)) {
-                        entities.get(entity.toUpperCase()).get(docID).set(0, String.valueOf(Integer.parseInt(entities.get(entity.toUpperCase()).get(docID).get(0)) + 1));
-                    } else {
-                        entities.get(entity.toUpperCase()).put(docID, new ArrayList<>(3));
-                        entities.get(entity.toUpperCase()).get(docID).add(0, "1");
-                        entities.get(entity.toUpperCase()).get(docID).add(1, String.valueOf(Boolean.compare(title.contains(entity), false)));
-                        entities.get(entity.toUpperCase()).get(docID).add(2, date);
-                    }
-                    if (this.indexer.getTermDictionary().containsKey(entity.toUpperCase())) {
-                        termMap.put(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName), entities.remove(entity.toUpperCase()));
-                    } else if (entities.get(entity.toUpperCase()).size() >= 2) {
-                        termMap.put(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName), entities.remove(entity.toUpperCase()));
-                    }
-                } else {
-                    if (entity.split("[-:, ]").length > 1) {
-                        entities.put(entity.toUpperCase(), new HashMap<String, ArrayList<String>>());
-                        entities.get(entity.toUpperCase()).put(docID, new ArrayList<String>(3));
-                        entities.get(entity.toUpperCase()).get(docID).add(0, "1");
-                        entities.get(entity.toUpperCase()).get(docID).add(1, String.valueOf(Boolean.compare(title.contains(entity), false)));
-                        entities.get(entity.toUpperCase()).get(docID).add(2, date);
-                    }
-                }
-            }
-        }
     }
 
     /**

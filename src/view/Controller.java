@@ -38,7 +38,7 @@ public class Controller {
     private javafx.scene.control.CheckBox stemmerCheckB;
 
     /**
-     * this function start the
+     * this function start the program via the view panel
      * @throws IOException
      */
     @FXML
@@ -81,12 +81,19 @@ public class Controller {
         }
     }
 
+    /**
+     * this function responsible of showing the alert
+     * @param alertMessage the massage to be shown
+     */
     private void showAlert(String alertMessage) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setContentText(alertMessage);
         alert.show();
     }
 
+    /**
+     * reset all memory saved on RAM and on hard disk
+     */
     @FXML
     private void reset() {
         if (txtPosting.getText().equals("")) {
@@ -120,6 +127,10 @@ public class Controller {
         browser(txtBrowse);
     }
 
+    /**
+     * set the browser to the users wanted path in view panel
+     * @param txt
+     */
     private void browser(TextArea txt) {
         DirectoryChooser directoryChooser = new DirectoryChooser();
         File selectedDirectory = directoryChooser.showDialog(null);
@@ -128,6 +139,10 @@ public class Controller {
         }
     }
 
+    /**
+     * this is a controller function to show the dictionary in view panel
+     * @throws IOException
+     */
     @FXML
     private void displayDictionary() throws IOException {
         String dictionary = "";
@@ -161,6 +176,11 @@ public class Controller {
             showAlert("please enter correct posting path");
         }
     }
+
+    /**
+     * this function load the dictionary from hard disk via the view panel
+     * @throws IOException
+     */
 
 
     @FXML
