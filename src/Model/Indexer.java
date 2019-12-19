@@ -22,6 +22,7 @@ public class Indexer {
     private static int folderNum=0;
 
     /**
+     * 
      * this function is a getter
      * @return the size of the termDictinary
      */
