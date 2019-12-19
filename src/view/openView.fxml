@@ -48,8 +48,8 @@
                         </Label>
                      </children>
                   </Pane>
-                  <Button mnemonicParsing="false" onAction="#displayDictionary" prefHeight="70.0" prefWidth="168.0" text="Display Dictionary " GridPane.columnIndex="2" GridPane.rowIndex="3" />
-                  <Button mnemonicParsing="false" onAction="#loadDictionary" prefHeight="70.0" prefWidth="150.0" text="Load Dictionary" GridPane.columnIndex="3" GridPane.rowIndex="3" />
+                  <Button mnemonicParsing="false" onAction="#displayDictionary" prefHeight="70.0" prefWidth="150.0" text="Display Dictionary " GridPane.columnIndex="2" GridPane.rowIndex="3" />
+                  <Button mnemonicParsing="false" onAction="#loadDictionary" prefHeight="70.0" prefWidth="150.0" text="Save Dictionary" GridPane.columnIndex="3" GridPane.rowIndex="3" />
                   <Pane GridPane.columnIndex="1" GridPane.rowIndex="3">
                      <children>
                         <Button fx:id="startButton" layoutY="32.0" mnemonicParsing="false" onAction="#startIR" prefHeight="70.0" prefWidth="150.0" text="Start" />

@@ -4,10 +4,7 @@ import Model.*;
 import Model.Merge;
 import Model.ReadFile;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -17,18 +14,15 @@ public class viewModel {
 
         File[] files1 = null;
         File folder = new File(corpusPath);
-        ExecutorService executor = Executors.newFixedThreadPool(5);
+        ExecutorService executor = Executors.newFixedThreadPool(4);
         File subFolderTerms = null;
-        boolean corpus;
-        boolean subFolder1;
-        boolean subFolder2;
         if (stem) {
             File directory = new File(postPath + "/StemmedCorpus");
-            corpus = directory.mkdir();
+            directory.mkdir();
             subFolderTerms = new File(postPath + "/StemmedCorpus/Terms");
-            subFolder1 = subFolderTerms.mkdir();
+            subFolderTerms.mkdir();
             File subFolderDocs = new File(postPath + "/StemmedCorpus/Docs");
-            subFolder2 = subFolderDocs.mkdir();
+            subFolderDocs.mkdir();
             for (char i = 'a'; i <= 'z'; i++) {
                 File Tfolder = new File(postPath + "/StemmedCorpus/Terms/" + i);
                 Tfolder.mkdir();
@@ -44,11 +38,11 @@ public class viewModel {
             mergedDoc.createNewFile();
         } else {
             File directory = new File(postPath + "/Corpus");
-            corpus = directory.mkdir();
+            directory.mkdir();
             subFolderTerms = new File(postPath + "/Corpus/Terms");
-            subFolder1 = subFolderTerms.mkdir();
+            subFolderTerms.mkdir();
             File subFolderDocs = new File(postPath + "/Corpus/Docs");
-            subFolder2 = subFolderDocs.mkdir();
+            subFolderDocs.mkdir();
             for (char i = 'a'; i <= 'z'; i++) {
                 File Tfolder = new File(postPath + "/Corpus/Terms/" + i);
                 Tfolder.mkdir();
@@ -63,10 +57,6 @@ public class viewModel {
             File mergedDoc = new File(subFolderDocs.getPath() + "/docDictionary", "docDictionary" + "_merged.txt");
             mergedDoc.createNewFile();
         }
-        if (!corpus || !subFolder1 || !subFolder2) {
-            int[] error = {0};
-            return error;
-        }
 
 
         if (folder.isDirectory()) {
@@ -75,7 +65,7 @@ public class viewModel {
             for (File SubFolder : listOfSubFolders) {
                 if (SubFolder.isDirectory()) {
                     files.add(SubFolder);
-                    if (files.size() == 5) {
+                    if (files.size() == 10) {
                         ReadFile read = new ReadFile(new ArrayList<>(files), new Indexer(stem, postPath), stem, corpusPath);
                         executor.execute(new Thread(read));
                         files.clear();
@@ -91,7 +81,7 @@ public class viewModel {
             while (!executor.isTerminated()) {
             }
         }
-        executor = Executors.newFixedThreadPool(5);
+        executor = Executors.newFixedThreadPool(4);
         for (File file : subFolderTerms.listFiles()) {
             if (file.isDirectory()) {
                 Merge merge = new Merge(file.listFiles());
@@ -105,9 +95,16 @@ public class viewModel {
 
 
         Indexer index = new Indexer(stem, postPath);
-        Map<String,Map<String,Integer>> map = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        map.putAll(Indexer.getTermDictionary());
-        index.setTermDictionary(map);
+
+        File file = new File( postPath + "/termDictionary.txt" );
+        file.createNewFile();
+        FileWriter writer = new FileWriter(file);
+        for (Map.Entry<String,Map<String,Integer>> records : Indexer.getTermDictionary().entrySet()) {
+            writer.write(records.getKey()+">"+records.getValue().keySet().toArray()[0]+">"+records.getValue().values().toArray()[0]+"\n");
+        }
+        writer.flush();
+        writer.close();
+
         int[] corpusInfo = new int[2];
         corpusInfo[0] = index.getNumberOfTerms();
         corpusInfo[1] = index.getNumberOrDocuments();
@@ -151,7 +148,7 @@ public class viewModel {
         Map<String, Map<String, Integer>> termDictionary = new HashMap<>();
         index.clearMap();
         while ((st = br.readLine()) != null) {
-            String[] term = st.split(",");
+            String[] term = st.split(">");
             if(term.length==3) {
                 termDictionary.put(term[0], new HashMap<>());
                 termDictionary.get(term[0]).put(term[1], Integer.parseInt(term[2]));
