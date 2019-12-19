@@ -12,20 +12,38 @@ import java.util.concurrent.Semaphore;
 
 public class Indexer {
 
-    private static Map<String, Map<String,Integer>> termDictionary = new TreeMap<>();
+    private static Map<String, Map<String,Integer>> termDictionary = new HashMap<>();
     private static HashMap<String, String> docDictionary = new HashMap<>();
+    private File directory;
     private File subFolderTerms;
     private File subFolderDocs;
     private static Semaphore mutex = new Semaphore(1);
+    private static int fileNum =0;
+    private static int folderNum=0;
 
+    /**
+     * this function is a getter
+     * @return the size of the termDictinary
+     */
     public int getNumberOfTerms(){
         return termDictionary.size();
     }
+
+    /**
+     * this function is a getter that returns the docDictionary size
+     * @return docDictionary size
+     */
     public  int getNumberOrDocuments(){
         return docDictionary.size();
     }
 
-    public Indexer(boolean stem, String postingPath){
+    /**
+     * this function is a constructor of indexer
+     * @param stem if stamming option is selected
+     * @param postingPath  the path of posting file location
+     * @throws IOException exception
+     */
+    public Indexer(boolean stem, String postingPath) throws IOException {
 
         if(!stem){
             subFolderTerms = new File(postingPath+"/Corpus/Terms");
@@ -38,6 +56,13 @@ public class Indexer {
 
     }
 
+    /**
+     * this function puts the data of the parser to files of posting and put data on the memory
+     * @param p the parser
+     * @return true or false if the block was index successfuly
+     * @throws IOException
+     * @throws InterruptedException
+     */
     public boolean addBlock(Parser p) throws IOException, InterruptedException {
         boolean createdFile;
         File file = null;
@@ -46,7 +71,7 @@ public class Indexer {
         BufferedWriter bw =null;
         PrintWriter writer=null;
 
-        Map <Token,Map<String,ArrayList<String>>> termMap = p.getTermMap();
+        Map <Token,Map<String,Integer>> termMap = p.getTermMap();
         Set<Token> tknSet = termMap.keySet();
 
 
@@ -58,9 +83,9 @@ public class Indexer {
             if(Character.isLetter(tkn.getStr().charAt(0))){
                 if(lines.containsKey(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getFile()+".txt")){
                     lines.get(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getFile()+".txt").add(tkn.getStr() +" : ");
-                    Set <Map.Entry<String,ArrayList<String>>> map = termMap.get(tkn).entrySet();
-                    for (Map.Entry<String,ArrayList<String>> me : map){
-                        lines.get(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getFile()+".txt").add("<"+me.getKey()+"|" + me.getValue().get(0)+"|"+me.getValue().get(1)+"|"+me.getValue().get(2)+">");
+                    Set <Map.Entry<String,Integer>> map = termMap.get(tkn).entrySet();
+                    for (Map.Entry me : map){
+                        lines.get(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getFile()+".txt").add(me.getKey()+"-" + me.getValue() +">> ");
                     }
                     lines.get(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getFile()+".txt").add("\n");
 
@@ -68,9 +93,9 @@ public class Indexer {
                 else{
                     lines.put(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getFile()+".txt",new ArrayList<String>());
                     lines.get(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getFile()+".txt").add(tkn.getStr() +" : ");
-                    Set <Map.Entry<String,ArrayList<String>>> map = termMap.get(tkn).entrySet();
-                    for (Map.Entry<String,ArrayList<String>> me : map){
-                        lines.get(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getFile()+".txt").add("<"+me.getKey()+"|" + me.getValue().get(0)+"|"+me.getValue().get(1)+"|"+me.getValue().get(2) +">");
+                    Set <Map.Entry<String,Integer>> map = termMap.get(tkn).entrySet();
+                    for (Map.Entry me : map){
+                        lines.get(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getFile()+".txt").add(me.getKey()+"-" + me.getValue() +">> ");
                     }
                     lines.get(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getFile()+".txt").add("\n");
                 }
@@ -79,57 +104,45 @@ public class Indexer {
             else{
                 if(lines.containsKey(subFolderTerms.getPath()+"/"+"special/"+tkn.getFile()+".txt")){
                     lines.get(subFolderTerms.getPath()+"/"+"special/"+tkn.getFile()+".txt").add(tkn.getStr() +" : ");
-                    Set <Map.Entry<String,ArrayList<String>>> map = termMap.get(tkn).entrySet();
-                    for (Map.Entry<String,ArrayList<String>> me : map){
-                        lines.get(subFolderTerms.getPath()+"/"+"special/"+tkn.getFile()+".txt").add("<"+me.getKey()+"|" + me.getValue().get(0)+"|"+me.getValue().get(1)+"|"+me.getValue().get(2) +">");
+                    Set <Map.Entry<String,Integer>> map = termMap.get(tkn).entrySet();
+                    for (Map.Entry me : map){
+                        lines.get(subFolderTerms.getPath()+"/"+"special/"+tkn.getFile()+".txt").add(me.getKey()+"-" + me.getValue() +">> ");
                     }
                     lines.get(subFolderTerms.getPath()+"/"+"special/"+tkn.getFile()+".txt").add("\n");
                 }
                 else{
                     lines.put(subFolderTerms.getPath()+"/"+"special/"+tkn.getFile()+".txt",new ArrayList<String>());
                     lines.get(subFolderTerms.getPath()+"/"+"special/"+tkn.getFile()+".txt").add(tkn.getStr() +" : ");
-                    Set <Map.Entry<String,ArrayList<String>>> map = termMap.get(tkn).entrySet();
-                    for (Map.Entry<String,ArrayList<String>> me : map){
-                        lines.get(subFolderTerms.getPath()+"/"+"special/"+tkn.getFile()+".txt").add("<"+me.getKey()+"|" + me.getValue().get(0)+"|"+me.getValue().get(1)+"|"+me.getValue().get(2) +">");
+                    Set <Map.Entry<String,Integer>> map = termMap.get(tkn).entrySet();
+                    for (Map.Entry me : map){
+                        lines.get(subFolderTerms.getPath()+"/"+"special/"+tkn.getFile()+".txt").add(me.getKey()+"-" + me.getValue() +">> ");
                     }
                     lines.get(subFolderTerms.getPath()+"/"+"special/"+tkn.getFile()+".txt").add("\n");
                 }
             }
             mutex.acquire();
             if(!termDictionary.containsKey(tkn.getStr().toUpperCase()) && !termDictionary.containsKey(tkn.getStr().toLowerCase())){
-                if(Character.isLetter(tkn.getStr().charAt(0))){
-                    if(Character.isUpperCase(tkn.getStr().charAt(0))){
-                        termDictionary.put(tkn.getStr().toUpperCase(),new HashMap<>());
-                        termDictionary.get(tkn.getStr().toUpperCase()).put(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getStr().toLowerCase().charAt(0)+"_merged.txt",sumTf(tkn.getStr(),termMap.get(tkn).entrySet()));
-                    }
-                    else{
-                        termDictionary.put(tkn.getStr().toLowerCase(),new HashMap<>());
-                        termDictionary.get(tkn.getStr().toLowerCase()).put(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getStr().toLowerCase().charAt(0)+"_merged.txt",sumTf(tkn.getStr(),termMap.get(tkn).entrySet()));
-                    }
+                if(Character.isUpperCase(tkn.getStr().charAt(0))){
+                    termDictionary.put(tkn.getStr().toUpperCase(),new HashMap<>());
+                    termDictionary.get(tkn.getStr().toUpperCase()).put(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getStr().toLowerCase().charAt(0)+"_merged.txt",sumTf(tkn.getStr(),termMap.get(tkn).values()));
                 }
                 else{
-                    termDictionary.put(tkn.getStr(),new HashMap<>());
-                    termDictionary.get(tkn.getStr()).put(subFolderTerms.getPath()+"/"+"special/"+"special_merged.txt",sumTf(tkn.getStr(),termMap.get(tkn).entrySet()));
-
+                    termDictionary.put(tkn.getStr().toLowerCase(),new HashMap<>());
+                    termDictionary.get(tkn.getStr().toLowerCase()).put(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getStr().toLowerCase().charAt(0)+"_merged.txt",sumTf(tkn.getStr(),termMap.get(tkn).values()));
                 }
             }
             else{
-                if(Character.isLetter(tkn.getStr().charAt(0))){
-                    if(termDictionary.containsKey(tkn.getStr().toUpperCase())){
-                        if(Character.isUpperCase(tkn.getStr().charAt(0))) {
-                            termDictionary.get(tkn.getStr().toUpperCase()).put(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getStr().toLowerCase().charAt(0)+"_merged.txt",sumTf(tkn.getStr(),termMap.get(tkn).entrySet()));
-                        }
-                        else{
-                            termDictionary.get(tkn.getStr().toUpperCase()).put(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getStr().toLowerCase().charAt(0)+"_merged.txt",sumTf(tkn.getStr(),termMap.get(tkn).entrySet()));
-                            termDictionary.put(tkn.getStr().toLowerCase(),termDictionary.remove(tkn.getStr().toUpperCase()));
-                        }
+                if(termDictionary.containsKey(tkn.getStr().toUpperCase())){
+                    if(Character.isUpperCase(tkn.getStr().charAt(0))) {
+                        termDictionary.get(tkn.getStr().toUpperCase()).put(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getStr().toLowerCase().charAt(0)+"_merged.txt",sumTf(tkn.getStr(),termMap.get(tkn).values()));
                     }
                     else{
-                        termDictionary.get(tkn.getStr().toLowerCase()).put(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getStr().toLowerCase().charAt(0)+"_merged.txt",sumTf(tkn.getStr(),termMap.get(tkn).entrySet()));
+                        termDictionary.get(tkn.getStr().toUpperCase()).put(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getStr().toLowerCase().charAt(0)+"_merged.txt",sumTf(tkn.getStr(),termMap.get(tkn).values()));
+                        termDictionary.put(tkn.getStr().toLowerCase(),termDictionary.remove(tkn.getStr().toUpperCase()));
                     }
                 }
                 else{
-                    termDictionary.get(tkn.getStr()).put(subFolderTerms.getPath()+"/"+"special/"+"special_merged.txt",sumTf(tkn.getStr(),termMap.get(tkn).entrySet()));
+                    termDictionary.get(tkn.getStr().toLowerCase()).put(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getStr().toLowerCase().charAt(0)+"_merged.txt",sumTf(tkn.getStr(),termMap.get(tkn).values()));
                 }
             }
             mutex.release();
@@ -162,7 +175,13 @@ public class Indexer {
         return true;
     }
 
-    private Integer sumTf(String term,Collection<Map.Entry<String,ArrayList<String>>> values) {
+    /**
+     * sum all of the tf of a term in all of the corpus
+     * @param term the current term that we want to know the tf
+     * @param values all of the tf in different in documents
+     * @return the tf of the term
+     */
+    private Integer sumTf(String term,Collection<Integer> values) {
         Integer sum;
         if((termDictionary.containsKey(term.toLowerCase()) && termDictionary.get(term.toLowerCase()).size()>0)){
             sum = termDictionary.get(term.toLowerCase()).get(termDictionary.get(term.toLowerCase()).keySet().toArray()[0]);
@@ -178,14 +197,20 @@ public class Indexer {
         else{
             sum =0;
         }
-        for(Map.Entry<String,ArrayList<String>> num:values){
-            sum = sum+ Integer.parseInt(num.getValue().get(0));
+        for(Integer num:values){
+            sum = sum+ num;
         }
         return sum;
     }
 
     //https://stackoverflow.com/questions/453018/number-of-lines-in-a-file-in-java
 
+    /**
+     *
+     * @param filename
+     * @return
+     * @throws IOException
+     */
     public int countLines(String filename) throws IOException {
         InputStream is = new BufferedInputStream(new FileInputStream(filename));
         try {
@@ -226,7 +251,12 @@ public class Indexer {
     }
 
 
-
+    /**
+     *
+     * @param term
+     * @param path
+     * @return
+     */
     //https://stackoverflow.com/questions/5600422/method-to-find-string-inside-of-the-text-file-then-getting-the-following-lines/45168182
     public int getLineNum(String term, String path) {
         File file = new File(path);
@@ -249,15 +279,12 @@ public class Indexer {
         return -1;
     }
 
-    public void addToLine(File file, int line, File folder) throws IOException {
-
-
-        List<String> lines = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
-        Collections.sort(lines);
-        Files.write(file.toPath(), lines, StandardCharsets.UTF_8);
-
-    }
-
+    /**
+     *this function write the records to a file/
+     * @param records
+     * @param filePath
+     * @throws IOException
+     */
     //https://stackoverflow.com/questions/1062113/fastest-way-to-write-huge-data-in-text-file-java
     private static void writeRaw(List<String> records,String filePath) throws IOException {
         File file = new File( filePath );
@@ -266,6 +293,12 @@ public class Indexer {
         write(records, writer);
     }
 
+    /**
+     * this function is a continues function to WrithRaw.
+     * @param records the records that we need to save.
+     * @param writer the writer option that saving the record.
+     * @throws IOException
+     */
     private static void write(List<String> records, Writer writer) throws IOException {
         for (String record: records) {
             writer.write(record);
@@ -274,13 +307,27 @@ public class Indexer {
         writer.close();
     }
 
-
+    /**
+     *a getter that return the termDictionary
+     * @return the termDictionary
+     */
     public static Map<String, Map<String,Integer>> getTermDictionary() {
         return termDictionary;
     }
+
+    /**
+     * this function is cleaning the data structure
+     */
     public static void clearMap(){
         termDictionary.clear();
+        docDictionary.clear();
+
     }
+
+    /**
+     * this function is a setter that save the term Dictionary
+     * @param termDictionary
+     */
     public static void setTermDictionary(Map<String, Map<String, Integer>> termDictionary) {
         Indexer.termDictionary = termDictionary;
     }

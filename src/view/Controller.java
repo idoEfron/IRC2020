@@ -31,9 +31,9 @@ public class Controller {
     @FXML
     private javafx.scene.control.Button resetB;
     @FXML
-    private javafx.scene.control.TextArea txtBrowse;
+    private TextArea txtBrowse;
     @FXML
-    private javafx.scene.control.TextArea txtPosting;
+    private TextArea txtPosting;
     @FXML
     private javafx.scene.control.CheckBox stemmerCheckB;
 
@@ -71,8 +71,13 @@ public class Controller {
             }
             int[] corpusInfo = viewModel.start(stem, postPath, corpusPath);
             long endTime = System.currentTimeMillis();
+            if(corpusInfo.length==1){
+                showAlert("file already exist please select the reset button");
+                return;
+
+            }
             showAlert("numbers of terms = " + corpusInfo[0] + "\nnumber of documents = " + corpusInfo[1]
-                    + "\nrunTime of the program = " + ((endTime-startTime)/1000)+ " seconds");
+                    + "\nrunTime of the program = " + ((endTime - startTime) / 1000) + " seconds");
         }
     }
 
@@ -88,6 +93,7 @@ public class Controller {
             showAlert("please enter correct posting path");
             return;
         } else {
+            Indexer.clearMap();
             File file = new File(txtPosting.getText());
             if (file.list().length > 0) {
                 viewModel.delete(file);
@@ -97,7 +103,7 @@ public class Controller {
 
                 showAlert("File deleted successfully");
             } else {
-                showAlert("There are no files to delete");
+                showAlert("Their is no files to delete");
                 return;
             }
         }
@@ -119,8 +125,6 @@ public class Controller {
         File selectedDirectory = directoryChooser.showDialog(null);
         if (selectedDirectory != null) {
             txt.setText(selectedDirectory.getAbsolutePath());
-        } else {
-            System.out.println("file is not valid");
         }
     }
 
@@ -162,7 +166,7 @@ public class Controller {
     @FXML
     private void loadDictionary() throws IOException {
         postPath = txtPosting.getText();
-        if (postPath == null||postPath.equals("")) {
+        if (postPath == null || postPath.equals("")) {
             showAlert("please enter posting path");
             return;
         } else {
