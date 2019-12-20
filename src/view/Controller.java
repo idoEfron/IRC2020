@@ -78,6 +78,7 @@ public class Controller {
             }
             showAlert("numbers of terms = " + corpusInfo[0] + "\nnumber of documents = " + corpusInfo[1]
                     + "\nrunTime of the program = " + ((endTime - startTime) / 1000) + " seconds");
+
         }
     }
 
