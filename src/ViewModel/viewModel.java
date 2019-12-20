@@ -10,22 +10,32 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class viewModel {
+    private File subFolderTerms = null;
+
+    /**
+     * this function is the starting function of the program processes
+     * @param stem if stemming is checked
+     * @param postPath  the posting files path
+     * @param corpusPath the corpus path
+     * @return int array of the alert details
+     * @throws IOException
+     */
+
     public int[] start(boolean stem, String postPath, String corpusPath) throws IOException {
 
         File[] files1 = null;
         File folder = new File(corpusPath);
-        ExecutorService executor = Executors.newFixedThreadPool(5);
-        File subFolderTerms = null;
-        boolean corpus;
-        boolean subFolder1;
-        boolean subFolder2;
+        ExecutorService executor = Executors.newFixedThreadPool(4);
+
         if (stem) {
+            createFolders(postPath,"StemmedCorpus");
+            /*
             File directory = new File(postPath + "/StemmedCorpus");
-            corpus = directory.mkdir();
+            directory.mkdir();
             subFolderTerms = new File(postPath + "/StemmedCorpus/Terms");
-            subFolder1 = subFolderTerms.mkdir();
+            subFolderTerms.mkdir();
             File subFolderDocs = new File(postPath + "/StemmedCorpus/Docs");
-            subFolder2 = subFolderDocs.mkdir();
+            subFolderDocs.mkdir();
             for (char i = 'a'; i <= 'z'; i++) {
                 File Tfolder = new File(postPath + "/StemmedCorpus/Terms/" + i);
                 Tfolder.mkdir();
@@ -38,14 +48,16 @@ public class viewModel {
             merged.createNewFile();
             new File(subFolderDocs.getPath() + "/docDictionary").mkdir();
             File mergedDoc = new File(subFolderDocs.getPath() + "/docDictionary", "docDictionary" + "_merged.txt");
-            mergedDoc.createNewFile();
+            mergedDoc.createNewFile();*/
         } else {
+            createFolders(postPath,"Corpus");
+            /*
             File directory = new File(postPath + "/Corpus");
-            corpus = directory.mkdir();
+            directory.mkdir();
             subFolderTerms = new File(postPath + "/Corpus/Terms");
-            subFolder1 = subFolderTerms.mkdir();
+            subFolderTerms.mkdir();
             File subFolderDocs = new File(postPath + "/Corpus/Docs");
-            subFolder2 = subFolderDocs.mkdir();
+            subFolderDocs.mkdir();
             for (char i = 'a'; i <= 'z'; i++) {
                 File Tfolder = new File(postPath + "/Corpus/Terms/" + i);
                 Tfolder.mkdir();
@@ -58,11 +70,7 @@ public class viewModel {
             merged.createNewFile();
             new File(subFolderDocs.getPath() + "/docDictionary").mkdir();
             File mergedDoc = new File(subFolderDocs.getPath() + "/docDictionary", "docDictionary" + "_merged.txt");
-            mergedDoc.createNewFile();
-        }
-        if (!corpus || !subFolder1 || !subFolder2) {
-            int[] error = {0};
-            return error;
+            mergedDoc.createNewFile();*/
         }
 
 
@@ -72,7 +80,7 @@ public class viewModel {
             for (File SubFolder : listOfSubFolders) {
                 if (SubFolder.isDirectory()) {
                     files.add(SubFolder);
-                    if (files.size() == 10) {
+                    if (files.size() == 20) {
                         ReadFile read = new ReadFile(new ArrayList<>(files), new Indexer(stem, postPath), stem, corpusPath);
                         executor.execute(new Thread(read));
                         files.clear();
@@ -88,7 +96,7 @@ public class viewModel {
             while (!executor.isTerminated()) {
             }
         }
-        executor = Executors.newFixedThreadPool(5);
+        executor = Executors.newFixedThreadPool(4);
         for (File file : subFolderTerms.listFiles()) {
             if (file.isDirectory()) {
                 Merge merge = new Merge(file.listFiles());
@@ -102,6 +110,7 @@ public class viewModel {
 
 
         Indexer index = new Indexer(stem, postPath);
+
         File file = new File( postPath + "/termDictionary.txt" );
         file.createNewFile();
         FileWriter writer = new FileWriter(file);
@@ -110,12 +119,19 @@ public class viewModel {
         }
         writer.flush();
         writer.close();
+
+        //System.out.println(ReadFile.docs);
+
         int[] corpusInfo = new int[2];
         corpusInfo[0] = index.getNumberOfTerms();
-        corpusInfo[1] = index.getNumberOrDocuments();
+        corpusInfo[1] = ReadFile.getDocs();
         return corpusInfo;
     }
 
+    /**
+     * this function deletes all files and directories in given directory/file
+     * @param file the file in which we want to recursively delete all files and directories
+     */
     public void delete(File file) {
         String[] lists = file.list();
         if (lists.length > 0) {
@@ -128,6 +144,42 @@ public class viewModel {
             }
         }
     }
+
+    /**
+     * this function creates all needed folders of the program
+     * @param postPath posting files path
+     * @param folder folder name depending on with stemming or without
+     * @throws IOException
+     */
+
+    private void createFolders(String postPath,String folder) throws IOException {
+        File directory = new File(postPath + "/"+folder);
+        directory.mkdir();
+        subFolderTerms = new File(postPath + "/"+folder+"/Terms");
+        subFolderTerms.mkdir();
+        File subFolderDocs = new File(postPath + "/"+folder+"/Docs");
+        subFolderDocs.mkdir();
+        for (char i = 'a'; i <= 'z'; i++) {
+            File Tfolder = new File(postPath + "/"+folder+"/Terms/" + i);
+            Tfolder.mkdir();
+            File merged = new File(subFolderTerms.getPath() + "/" + i, i + "_merged.txt");
+            merged.createNewFile();
+        }
+        File Sfolder = new File(subFolderTerms.getPath()+"/special");
+        Sfolder.mkdir();
+        File merged = new File(subFolderTerms.getPath() + "/special", "special" + "_merged.txt");
+        merged.createNewFile();
+        //File mergedDoc = new File(subFolderDocs.getPath() + "/docDictionary", "docDictionary" + "_merged.txt");
+        //mergedDoc.createNewFile();
+    }
+
+    /**
+     * this function display the dictionary generated from the program
+     * @param selected stemming selected/not selected
+     * @param postPath  posting files path
+     * @return the String to be displayed
+     * @throws IOException
+     */
 
     public String displayDictionary(boolean selected, String postPath) throws IOException {
         String dictionary = "";
@@ -144,6 +196,13 @@ public class viewModel {
             return "";
         }
     }
+
+    /**
+     * this function loads dictionary from the hard disk to RAM
+     * @param selected stemming selected/not selected
+     * @param postPath posting file path
+     * @throws IOException
+     */
 
     public void loadDictionary(boolean selected, String postPath) throws IOException {
         File file = new File(postPath + "/termDictionary.txt");
