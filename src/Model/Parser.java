@@ -16,7 +16,7 @@ public class Parser {
 
     private Map<Token, Map<String, ArrayList<String>>> termMap;
     private HashSet<String> stopwords;
-    private Map<String, Map<String, ArrayList<String>>> entities = new HashMap<>();
+     private Map<String, Map<String, ArrayList<String>>> entities = new HashMap<>();
     private Map<String, String> months;
     private Map<String, String> mass;
     private Map<String, String> electrical;
@@ -26,6 +26,7 @@ public class Parser {
     private Set<String> termsInDoc;
     private ReadFile rf;
     private Indexer indexer;
+
 
     /**
      * this is the constructor of the parser
@@ -170,40 +171,45 @@ public class Parser {
      *
      * @param docList that needed to be parse and splited
      */
-    public void parseDocs(String[] docList) throws ParseException, IOException, InterruptedException {
+    public void parseDocs(ArrayList<String> docList) throws ParseException, IOException, InterruptedException {
         String docNo = "";
         String title = "";
         String date = "";
-        for (int i = 0; i < docList.length; i++) {
-            if (!docList[i].equals("\n") && !docList[i].equals("\n\n\n") && !docList[i].equals("\n\n\n\n") && !docList[i].equals("\n\n")) {
-                String docId = docList[i];
-
-                try {
+        for (int i = 0; i < docList.size(); i++) {
+            if (!docList.get(i).equals("\n") && !docList.get(i).equals("\n\n\n") && !docList.get(i).equals("\n\n\n\n") && !docList.get(i).equals("\n\n")) {
+                String docId = docList.get(i);
+                if (docId.contains("<DOCNO>")) {
                     docNo = docId.substring(docId.indexOf("<DOCNO>") + 8, docId.indexOf("</DOCNO>") - 1);
-                    if (docId.contains("<TI>")) {
-                        title = docId.substring(docId.indexOf("<TI>") + 10, docId.indexOf("</TI>"));
-                    }
-                    if (docId.contains("<DATE1>")) {
-                        date = docId.substring(docId.indexOf("<DATE1>") + 10, docId.indexOf("</DATE1>") - 1);
-                        String[] dateSplit = date.split(" ");
-                        if (dateSplit.length == 3 && months.containsKey(dateSplit[1])) {
-                            dateSplit[1] = months.get(dateSplit[1]);
-                            date = dateSplit[0] + "/" + dateSplit[1] + "/" + dateSplit[2];
-                        }
 
-                    }
-                } catch (Exception e) {
-                    System.out.println("problem in: " + docNo);
                 }
-
-                if (docId.contains("<TEXT>") && docId.contains("</TEXT>")) {
-                    String txt = "";
-                    try {
-                        txt = docId.substring(docId.indexOf("<TEXT>") + 7, docId.indexOf("</TEXT>") - 2);
-                    } catch (StringIndexOutOfBoundsException e) {
-                        System.out.println("problem in file: " + docNo);
+                if (docId.contains("<TI>")) {
+                    title = docId.substring(docId.indexOf("<TI>"), docId.indexOf("</TI>"));
+                    title = title.replaceAll("\\<.*?\\>", "");
+                }
+                if (docId.contains("<DATE1>")) {
+                    date = docId.substring(docId.indexOf("<DATE1>"), docId.indexOf("</DATE1>"));
+                    date = date.replaceAll("\\<.*?\\>", "");
+                    String[] dateSplit = date.split(" ");
+                    if (dateSplit.length == 3 && months.containsKey(dateSplit[1])) {
+                        dateSplit[1] = months.get(dateSplit[1]);
+                        date = dateSplit[0] + "/" + dateSplit[1] + "/" + dateSplit[2];
                     }
-                    txt = txt.replaceAll("\\<.*?\\>|\\p{Ps}|\\p{Pe}", " ");
+
+                }
+                if (docId.contains("<DATE>")) {
+                    String s = docId.substring(docId.indexOf("<DATE>"), docId.indexOf("\n</DATE>"));
+                    // s = s+ "</DATE>";
+                    s = s.replaceAll("\\<.*?\\>", "");
+                    if (s.contains(",")) {
+                        String[] dates = s.split(",");
+                        s = dates[0].substring(2) + " " + dates[1];
+                    }
+                    date = s;
+                }
+                String txt = "";
+                if (docId.contains("<TEXT>") && docId.contains("</TEXT>")) {
+                    txt = docId.substring(docId.indexOf("<TEXT>"), docId.indexOf("</TEXT>"));
+                    txt = txt.replaceAll("\\<.*?\\>|\\p{Ps}|\\p{Pe}| :", " ");
                     txt = txt.replace("--", " ");
                     String[] tokens = txt.split("\\s+|\n");
                     ArrayList<Token> afterCleaning = new ArrayList<>();
@@ -226,23 +232,49 @@ public class Parser {
                         } else if (!currToken.contains("U.S") && !isNumber(currToken) && !(currToken.contains("%") || currToken.contains("$"))
                                 && !currToken.matches("[a-zA-Z0-9]a-zA-Z0-9]*")) {
                             if (isNumric(currToken) == false) {
-                                String[] afterRemoving = currToken.split("\\W");
-                                if (afterRemoving.length > 1) {
-                                    if (afterRemoving.length == 2 && (isNumric(afterRemoving[0]) && isNumric(afterRemoving[1])) ||
-                                            (isNumric(afterRemoving[1]) && afterRemoving[0].equals("") && afterRemoving[1].length() + 1 == currToken.length()) ||
-                                            (isNumric(afterRemoving[0]) && afterRemoving[1].contains("m"))) {
-                                        afterCleaning.add(new Token(currToken, docNo, date, title.contains(currToken), rf.getSubFolder().get(0).getName()));
-                                    } else {
-                                        for (int j = 0; j < afterRemoving.length; j++) {
-                                            token = cleanToken(afterRemoving[j]);
-                                            if (token.length() > 0) {
-                                                afterCleaning.add(new Token(token, docNo, date, title.contains(token), rf.getSubFolder().get(0).getName()));
+                                if (checkBetween(currToken) == false) {
+                                    String[] afterRemoving = currToken.split("\\W");
+                                    if (afterRemoving.length > 1) {
+                                        if (afterRemoving.length == 2 && (isNumric(afterRemoving[0]) && isNumric(afterRemoving[1])) ||
+                                                (isNumric(afterRemoving[1]) && afterRemoving[0].equals("") && afterRemoving[1].length() + 1 == currToken.length()) ||
+                                                (isNumric(afterRemoving[0]) && afterRemoving[1].contains("m"))) {
+                                            afterCleaning.add(new Token(currToken, docNo, date, title.contains(currToken), rf.getSubFolder().get(0).getName()));
+                                        } else {
+                                            for (int j = 0; j < afterRemoving.length; j++) {
+                                                token = cleanToken(afterRemoving[j]);
+                                                if (token.length() > 0) {
+                                                    afterCleaning.add(new Token(token, docNo, date, title.contains(token), rf.getSubFolder().get(0).getName()));
+                                                }
                                             }
                                         }
+                                    } else if (afterRemoving.length == 1) {
+                                        token = cleanToken(afterRemoving[0]);
+                                        afterCleaning.add(new Token(token, docNo, date, title.contains(token), rf.getSubFolder().get(0).getName()));
                                     }
-                                } else if (afterRemoving.length == 1) {
-                                    token = cleanToken(afterRemoving[0]);
-                                    afterCleaning.add(new Token(token, docNo, date, title.contains(token), rf.getSubFolder().get(0).getName()));
+                                } else {
+                                    token = cleanToken(currToken);
+                                    if (token.contains("-") && checkBetween(token)) {
+                                        String[] arrToken = token.split("-");
+                                        if (arrToken.length == 2) {
+                                            afterCleaning.add(new Token(arrToken[0], docNo, date, title.contains(arrToken[0]), rf.getSubFolder().get(0).getName()));
+                                            afterCleaning.add(new Token(arrToken[1], docNo, date, title.contains(arrToken[1]), rf.getSubFolder().get(0).getName()));
+                                            if (y - 1 >= 0 && isNumber(tokens[y - 1]) && (arrToken[0].equalsIgnoreCase("Thousand") || arrToken[0].equalsIgnoreCase("Million") || arrToken[0].equalsIgnoreCase("Billion"))) {
+                                                token = addMeasure(tokens[y - 1], token);
+                                            }
+                                            if (y + 1 < tokens.length && isNumber(arrToken[1]) && (tokens[y + 1].equalsIgnoreCase("Thousand") || tokens[y + 1].equalsIgnoreCase("Million") || tokens[y + 1].equalsIgnoreCase("Billion"))) {
+                                                token = addMeasure(tokens[y + 1], token);
+                                            }
+                                            afterCleaning.add(new Token(token, docNo, date, title.contains(token), rf.getSubFolder().get(0).getName()));
+
+                                        }
+                                        if (arrToken.length == 3) {
+                                            afterCleaning.add(new Token(arrToken[0], docNo, date, title.contains(arrToken[0]), rf.getSubFolder().get(0).getName()));
+                                            afterCleaning.add(new Token(arrToken[1], docNo, date, title.contains(arrToken[1]), rf.getSubFolder().get(0).getName()));
+                                            afterCleaning.add(new Token(arrToken[2], docNo, date, title.contains(arrToken[2]), rf.getSubFolder().get(0).getName()));
+                                            afterCleaning.add(new Token(token, docNo, date, title.contains(token), rf.getSubFolder().get(0).getName()));
+
+                                        }
+                                    }
                                 }
                             } else {
                                 token = cleanToken(currToken);
@@ -270,18 +302,70 @@ public class Parser {
                     handler(afterCleaning, docNo, date, title);
                 }
 
-                wordCounter.put(docNo, termsInDoc.size());
-                termsInDoc.clear();
             }
 
+            wordCounter.put(docNo, termsInDoc.size());
+            termsInDoc.clear();
         }//bracket on the for on the doc list's
 
         stopwords.clear();
         months.clear();
         mass.clear();
         electrical.clear();
-        int k = 0;
         indexer.addBlock(this);
+    }
+
+    private String addMeasure(String addTo, String tokenToAdd) throws ParseException {
+        if (tokenToAdd.contains("-")) {
+            String[] arrTokens = tokenToAdd.split("-");
+            if (isNumber(addTo)) {
+                if (arrTokens[0].contains("Thousand") || arrTokens[0].contains("Thousand".toLowerCase()) || arrTokens[0].contains("Thousand".toUpperCase())) {
+                    tokenToAdd = addTo + "K" + "-" + arrTokens[1];
+                } else if ((arrTokens[0].contains("Million") || arrTokens[0].contains("Million".toLowerCase()) || arrTokens[0].contains("Million".toUpperCase()))) {
+                    tokenToAdd = addTo + "M" + "-" + arrTokens[1];
+                } else if ((arrTokens[0].contains("Billion") || arrTokens[0].contains("Billion".toLowerCase()) || arrTokens[0].contains("Billion".toUpperCase()))) {
+                    tokenToAdd = addTo + "B" + "-" + arrTokens[1];
+                }
+                return tokenToAdd;
+            } else if (isNumber(arrTokens[1]) && (addTo.equalsIgnoreCase("Thousand") || addTo.equalsIgnoreCase("Million") || addTo.equalsIgnoreCase("Billion"))) {
+                if (addTo.contains("Thousand") || addTo.contains("Thousand".toLowerCase()) || addTo.contains("Thousand".toUpperCase())) {
+                    tokenToAdd = arrTokens[0] + "-" + arrTokens[1] + "K";
+                } else if ((addTo.contains("Million") || addTo.contains("Million".toLowerCase()) || addTo.contains("Million".toUpperCase()))) {
+                    tokenToAdd = arrTokens[0] + "-" + arrTokens[1] + "M";
+                } else if ((addTo.contains("Billion") || addTo.contains("Billion".toLowerCase()) || addTo.contains("Billion".toUpperCase()))) {
+                    tokenToAdd = arrTokens[0] + "-" + arrTokens[1] + "B";
+                }
+                return tokenToAdd;
+            }
+        } else if (isNumber(addTo) && tokenToAdd.equalsIgnoreCase("Thousand") || tokenToAdd.equalsIgnoreCase("Million") || tokenToAdd.equalsIgnoreCase("Billion")) {
+            if (tokenToAdd.contains("Thousand") || tokenToAdd.contains("Thousand".toLowerCase()) || tokenToAdd.contains("Thousand".toUpperCase())) {
+                tokenToAdd = addTo + "K";
+            } else if ((tokenToAdd.contains("Million") || tokenToAdd.contains("Million".toLowerCase()) || tokenToAdd.contains("Million".toUpperCase()))) {
+                tokenToAdd = addTo + "M";
+            } else if ((tokenToAdd.contains("Billion") || tokenToAdd.contains("Billion".toLowerCase()) || tokenToAdd.contains("Billion".toUpperCase()))) {
+                tokenToAdd = addTo + "B";
+            }
+        }
+        return tokenToAdd;
+    }
+
+    private boolean checkBetween(String currToken) throws ParseException {
+        if (currToken.contains("-")) {
+            String[] arrTokens = currToken.split("-");
+            if (arrTokens.length == 2) {
+                if ((isNumber(arrTokens[0]) || isNumber(arrTokens[1]))) {
+                    return true;
+                }
+                if (!isNumber(arrTokens[0]) && !isNumber(arrTokens[1])) {
+                    return true;
+                }
+                return false;
+            } else if (arrTokens.length == 3 && !isNumber(arrTokens[0]) && !isNumber(arrTokens[1]) && !isNumber(arrTokens[2])) {
+                return true;
+            }
+            return false;
+        }
+        return false;
     }
 
     /**
@@ -444,9 +528,9 @@ public class Parser {
                 (current.contains("bn") && after.equals("Dollars")) || current.contains("%")) {
             if (after.contains("Thousand") || after.contains("Thousand".toLowerCase()) || after.contains("Thousand".toUpperCase())) {
                 putTerm(current, "K", docID, date, title);
-            } else if (!current.contains("$") && !afterTwo.equals("U.S") && !afterThree.equals("dollars") && (after.contains("Million") || after.contains("Million".toLowerCase()) || after.contains("Million".toUpperCase()))) {
+            } else if (!current.contains("$") && !afterTwo.equals("U.S.") && !afterThree.equals("dollars") && (after.contains("Million") || after.contains("Million".toLowerCase()) || after.contains("Million".toUpperCase()))) {
                 putTerm(current, "M", docID, date, title);
-            } else if (!afterThree.equals("dollars") && !afterTwo.equals("U.S") && !current.contains("$") && (after.contains("Billion") || after.contains("Billion".toLowerCase()) || after.contains("Billion".toUpperCase()))) {
+            } else if (!afterThree.equals("dollars") && !afterTwo.equals("U.S.") && !current.contains("$") && (after.contains("Billion") || after.contains("Billion".toLowerCase()) || after.contains("Billion".toUpperCase()))) {
                 putTerm(current, "B", docID, date, title);
             }
             //***************checks if the case is percentage***************************////
@@ -481,8 +565,8 @@ public class Parser {
             //*******************dollars************************************************
             try {
                 if (after.equals("Dollars") ||
-                        current.contains("$") || (after.equals("billion") && afterTwo.equals("U.S")
-                        && afterThree.equals("dollars")) || (after.equals("million") && afterTwo.equals("U.S"))
+                        current.contains("$") || (after.equals("billion") && afterTwo.equals("U.S.")
+                        && afterThree.equals("dollars")) || (after.equals("million") && afterTwo.equals("U.S."))
                         && afterThree.equals("dollars")) {
 
                     if (current.contains("$")) {
@@ -529,10 +613,10 @@ public class Parser {
                         }
                     }
                     ////////*******dollars********///////////////////
-                    else if (isNumber(current) && after.equals("billion") && afterTwo.equals("U.S") && afterThree.equals("dollars")) {
+                    else if (isNumber(current) && after.equals("billion") && afterTwo.equals("U.S.") && afterThree.equals("dollars")) {
                         putTerm(current + "000", " M Dollars", docID, date, title);
                         return true;
-                    } else if (isNumber(current) && after.equals("million") && afterTwo.equals("U.S") && afterThree.equals("dollars")) {
+                    } else if (isNumber(current) && after.equals("million") && afterTwo.equals("U.S.") && afterThree.equals("dollars")) {
                         putTerm(current, " M Dollars", docID, date, title);
                         return true;
                     }
@@ -749,7 +833,7 @@ public class Parser {
                     if (entities.get(entity.toUpperCase()).containsKey(docID)) {
                         entities.get(entity.toUpperCase()).get(docID).set(0, String.valueOf(Integer.parseInt(entities.get(entity.toUpperCase()).get(docID).get(0)) + 1));
                     } else {
-                        entities.get(entity.toUpperCase()).put(docID, new ArrayList<>(3));
+                        entities.get(entity.toUpperCase()).put(docID, new ArrayList<String>(3));
                         entities.get(entity.toUpperCase()).get(docID).add(0, "1");
                         entities.get(entity.toUpperCase()).get(docID).add(1, String.valueOf(Boolean.compare(title.contains(entity), false)));
                         entities.get(entity.toUpperCase()).get(docID).add(2, date);
@@ -839,19 +923,40 @@ public class Parser {
                                 return true;
                             }
                         } else {
-                            termMap.put(currTok, new HashMap<String,ArrayList<String>>());
+                            termMap.put(currTok, new HashMap<String, ArrayList<String>>());
                             termMap.get(currTok).put(docID, new ArrayList<>(3));
-                            termMap.get(currTok).get(docID).add(0,"1");
-                            termMap.get(currTok).get(docID).add(1, String.valueOf(Boolean.compare(currTok.isInTitle(),false)));
-                            termMap.get(currTok).get(docID).add(2,date);
+                            termMap.get(currTok).get(docID).add(0, "1");
+                            termMap.get(currTok).get(docID).add(1, String.valueOf(Boolean.compare(currTok.isInTitle(), false)));
+                            termMap.get(currTok).get(docID).add(2, date);
                             return true;
                         }
                     }
 
                 }
+
             } catch (NumberFormatException e) {
                 //term is not a date
             }
+            if (current.contains("-") && checkBetween(current)) {
+                String[] arrToken = current.split("-");
+                if (arrToken.length == 2 && (isNumber(arrToken[0]) || isNumber(arrToken[1]))) {
+                    if (isNumber(arrToken[0])) {
+                        String sumOne = arrToken[0].replaceAll(",", "");
+                        current = convertToNum(sumOne, arrToken[0]) + "-" + arrToken[1];
+                        putTerm(current, "", docID, date, title);
+                        return true;
+                    } else {
+                        String sumTwo = arrToken[1].replaceAll(",", "");
+                        current = arrToken[0] + "-" + convertToNum(sumTwo, arrToken[1]);
+                        putTerm(current, "", docID, date, title);
+                        return true;
+                    }
+                } else {
+                    putTerm(current, "", docID, date, title);
+                    return true;
+                }
+            }
+
             /***lower/upper**////
             if (Character.isUpperCase(current.charAt(0))) {
                 checkEntity(tokens, index, docID, date, title, rf.getSubFolder().get(0).getName());
@@ -873,8 +978,9 @@ public class Parser {
                     putTermString(current.toLowerCase(), docID, stemming, date, title);
                     return true;
                 }
-            } /*else {
-                putTermString(current, docID, stemming, title.contains(current));
+            }
+            /*else {
+                putTermString(current, docID, stemming,date, title);
                 return true;
             }*/
         }
@@ -884,43 +990,45 @@ public class Parser {
             boolean flag = false;
             boolean allStopwords = true;
             int stopIndex = index;
-            if(current.equalsIgnoreCase("between")){
-                if(index+3<tokens.size() && tokens.get(index+2).getStr().equalsIgnoreCase("and") && isNumber(tokens.get(index+1).getStr()) && isNumber(tokens.get(index+3).getStr())){
-                    putTermString(tokens.get(index+1).getStr()+"-"+tokens.get(index+3).getStr(), docID, stemming, date, title);
-                    return true;
+            if (current.equalsIgnoreCase("between")) {
+                if (index + 3 < tokens.size() && tokens.get(index + 2).getStr().equalsIgnoreCase("and") && isNumber(tokens.get(index + 1).getStr()) && isNumber(tokens.get(index + 3).getStr())) {
+                    if (index + 4 < tokens.size()) {
+
+                        if (tokens.get(index + 2).getStr().equalsIgnoreCase("and")) {
+                            if (isNumber(tokens.get(index + 1).getStr()) && isNumber(tokens.get(index + 3).getStr())) {
+                                if (tokens.get(index + 4).getStr().equalsIgnoreCase("million") || tokens.get(index + 4).getStr().equalsIgnoreCase("billion") || tokens.get(index + 4).getStr().equalsIgnoreCase("thousand")) {
+                                    putTermString(tokens.get(index + 1).getStr() + "-" + addMeasure(tokens.get(index + 3).getStr(), tokens.get(index + 4).getStr()), docID, stemming, date, title);
+                                    return true;
+                                } else {
+                                    putTermString(tokens.get(index + 1).getStr() + "-" + tokens.get(index + 3).getStr(), docID, stemming, date, title);
+                                    return true;
+                                }
+                            }
+                        }
+                    } else if (index + 3 < tokens.size()) {
+                        putTermString(tokens.get(index + 1).getStr() + "-" + tokens.get(index + 3).getStr(), docID, stemming, date, title);
+                        return true;
+                    }
+                } else if (index + 5 < tokens.size()) {
+                    if (tokens.get(index + 3).getStr().equalsIgnoreCase("and")) {
+                        if (isNumber(tokens.get(index + 1).getStr()) && isNumber(tokens.get(index + 4).getStr())) {
+                            if (tokens.get(index + 2).getStr().equalsIgnoreCase("million") || tokens.get(index + 2).getStr().equalsIgnoreCase("billion")
+                                    || tokens.get(index + 2).getStr().equalsIgnoreCase("thousand")) {
+                                if (tokens.get(index + 5).getStr().equalsIgnoreCase("thousand") || tokens.get(index + 5).getStr().equalsIgnoreCase("million")
+                                        || tokens.get(index + 5).getStr().equalsIgnoreCase("billion")) {
+                                    putTermString(addMeasure(tokens.get(index + 1).getStr(), tokens.get(index + 2).getStr()) + "-" + addMeasure(tokens.get(index + 4).getStr(), tokens.get(index + 5).getStr()), docID, stemming, date, title);
+                                    return true;
+                                } else {
+                                    putTermString(addMeasure(tokens.get(index + 1).getStr(), tokens.get(index + 2).getStr()) + "-" + tokens.get(index + 4).getStr(), docID, stemming, date, title);
+                                    return true;
+                                }
+                            }
+                        }
+                    }
                 }
-                else if(index+5<tokens.size()){
-                    if(tokens.get(index+3).getStr().equalsIgnoreCase("and")){
-                        if(isNumber(tokens.get(index+1).getStr()) && isNumber(tokens.get(index+4).getStr())){
-                            if(tokens.get(index+2).getStr().equalsIgnoreCase("million") || tokens.get(index+2).getStr().equalsIgnoreCase("billion")
-                                    || tokens.get(index+2).getStr().equalsIgnoreCase("thousand")){
-                                if(tokens.get(index+5).getStr().equalsIgnoreCase("thousand") || tokens.get(index+5).getStr().equalsIgnoreCase("million")
-                                        || tokens.get(index+5).getStr().equalsIgnoreCase("billion")){
-                                    ////putTermString(addMeasure(tokens.get(index+1).getStr(),token.get(index+2).getStr())+"-"+addMeasure(tokens.get(index+4).getStr(),tokens.get(index+5)), docID, stemming, date, title);
-                                    return true;
-                                }
-                                else{
-                                    //putTermString(addMeasure(tokens.get(index+1).getStr(),token.get(index+2).getStr())+"-"+tokens.get(index+4).getStr(), docID, stemming, date, title);
-                                    return true;
-                                }
-                            }
-                        }
-                    }
-                    else if(tokens.get(index+2).getStr().equalsIgnoreCase("and")){
-                        if(isNumber(tokens.get(index+1).getStr()) && isNumber(tokens.get(index+3).getStr())){
-                            if(tokens.get(index+4).getStr().equalsIgnoreCase("million") || tokens.get(index+4).getStr().equalsIgnoreCase("billion") || tokens.get(index+4).getStr().equalsIgnoreCase("thousand")){
-                                    //putTermString(tokens.get(index+1).getStr()+"-"+addMeasure(tokens.get(index+3).getStr(),tokens.get(index+4)), docID, stemming, date, title);
-                                    return true;
-                                }
-                                else{
-                                    //putTermString(tokens.get(index+1).getStr()+"-"+tokens.get(index+3).getStr(), docID, stemming, date, title);
-                                    return true;
-                                }
-                            }
-                        }
-                    }
+
             }
-            if( Character.isUpperCase(current.charAt(0))){
+            if (Character.isUpperCase(current.charAt(0))) {
                 while (stopIndex + 1 < tokens.size() && !flag) {
                     stopIndex = stopIndex + 1;
                     String afterStop = tokens.get(stopIndex).getStr();
@@ -969,23 +1077,23 @@ public class Parser {
         Token currTok = new Token(current, docID, date, title.contains(current), rf.getSubFolder().get(0).getName());
         if (termMap.containsKey(currTok)) {
             if (termMap.get(currTok).containsKey(docID)) {
-                termMap.get(currTok).get(docID).set(0,String.valueOf(Integer.parseInt(termMap.get(currTok).get(docID).get(0)) + 1));
+                termMap.get(currTok).get(docID).set(0, String.valueOf(Integer.parseInt(termMap.get(currTok).get(docID).get(0)) + 1));
                 updateMaxTf(current, "", docID, date, title);
                 updateWordList(current, "");
             } else {
-                termMap.get(currTok).put(docID,new ArrayList<>(3));
-                termMap.get(currTok).get(docID).add(0,"1");
-                termMap.get(currTok).get(docID).add(1, String.valueOf(Boolean.compare(currTok.isInTitle(),false)));
-                termMap.get(currTok).get(docID).add(2,date);
+                termMap.get(currTok).put(docID, new ArrayList<>(3));
+                termMap.get(currTok).get(docID).add(0, "1");
+                termMap.get(currTok).get(docID).add(1, String.valueOf(Boolean.compare(currTok.isInTitle(), false)));
+                termMap.get(currTok).get(docID).add(2, date);
                 updateMaxTf(current, "", docID, date, title);
                 updateWordList(current, "");
             }
         } else if (current.length() > 1) {
-            termMap.put(currTok, new HashMap<String,ArrayList<String>>());
+            termMap.put(currTok, new HashMap<String, ArrayList<String>>());
             termMap.get(currTok).put(docID, new ArrayList<>(3));
-            termMap.get(currTok).get(docID).add(0,"1");
-            termMap.get(currTok).get(docID).add(1, String.valueOf(Boolean.compare(currTok.isInTitle(),false)));
-            termMap.get(currTok).get(docID).add(2,date);
+            termMap.get(currTok).get(docID).add(0, "1");
+            termMap.get(currTok).get(docID).add(1, String.valueOf(Boolean.compare(currTok.isInTitle(), false)));
+            termMap.get(currTok).get(docID).add(2, date);
             updateMaxTf(current, "", docID, date, title);
             updateWordList(current, "");
         }

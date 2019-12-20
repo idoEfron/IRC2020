@@ -1,12 +1,8 @@
 package Model;
 
-import com.sun.org.apache.bcel.internal.generic.IF_ACMPEQ;
-import javafx.util.Pair;
 
 import javax.annotation.processing.FilerException;
 import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.Semaphore;
 
@@ -133,9 +129,29 @@ public class Indexer {
                     }
                 }
                 else{
-                    termDictionary.put(tkn.getStr(),new HashMap<>());
-                    termDictionary.get(tkn.getStr()).put(subFolderTerms.getPath()+"/"+"special/"+"special_merged.txt",sumTf(tkn.getStr(),termMap.get(tkn).entrySet()));
-
+                    if(tkn.getStr().contains("-")){
+                        String[] strA = tkn.getStr().split("-");
+                        if(strA.length==2){
+                            if(Character.isLetter(strA[1].charAt(0))){
+                                if(Character.isUpperCase(strA[1].charAt(0))){
+                                    termDictionary.put(tkn.getStr().toUpperCase(),new HashMap<>());
+                                    termDictionary.get(tkn.getStr().toUpperCase()).put(subFolderTerms.getPath()+"/"+"special/"+"special_merged.txt",sumTf(tkn.getStr(),termMap.get(tkn).entrySet()));
+                                }
+                                else{
+                                    termDictionary.put(tkn.getStr().toLowerCase(),new HashMap<>());
+                                    termDictionary.get(tkn.getStr().toLowerCase()).put(subFolderTerms.getPath()+"/"+"special/"+"special_merged.txt",sumTf(tkn.getStr(),termMap.get(tkn).entrySet()));
+                                }
+                            }
+                            else{
+                                termDictionary.put(tkn.getStr(),new HashMap<>());
+                                termDictionary.get(tkn.getStr()).put(subFolderTerms.getPath()+"/"+"special/"+"special_merged.txt",sumTf(tkn.getStr(),termMap.get(tkn).entrySet()));
+                            }
+                        }
+                    }
+                    else{
+                        termDictionary.put(tkn.getStr(),new HashMap<>());
+                        termDictionary.get(tkn.getStr()).put(subFolderTerms.getPath()+"/"+"special/"+"special_merged.txt",sumTf(tkn.getStr(),termMap.get(tkn).entrySet()));
+                    }
                 }
             }
             else{
@@ -149,12 +165,24 @@ public class Indexer {
                             termDictionary.put(tkn.getStr().toLowerCase(),termDictionary.remove(tkn.getStr().toUpperCase()));
                         }
                     }
-                    else{
-                        termDictionary.get(tkn.getStr().toLowerCase()).put(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getStr().toLowerCase().charAt(0)+"_merged.txt",sumTf(tkn.getStr(),termMap.get(tkn).entrySet()));
-                    }
                 }
                 else{
-                    termDictionary.get(tkn.getStr()).put(subFolderTerms.getPath()+"/"+"special/"+"special_merged.txt",sumTf(tkn.getStr(),termMap.get(tkn).entrySet()));
+                    try{
+                        if(tkn.getStr().contains("-")){
+                            if(termDictionary.containsKey(tkn.getStr().toUpperCase())){
+                                termDictionary.get(tkn.getStr().toUpperCase()).put(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getStr().toLowerCase().charAt(0)+"_merged.txt",sumTf(tkn.getStr(),termMap.get(tkn).entrySet()));
+                            }
+                            else{
+                                termDictionary.get(tkn.getStr().toLowerCase()).put(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getStr().toLowerCase().charAt(0)+"_merged.txt",sumTf(tkn.getStr(),termMap.get(tkn).entrySet()));
+                            }
+                        }
+                        else{
+                            termDictionary.get(tkn.getStr()).put(subFolderTerms.getPath()+"/"+"special/"+"special_merged.txt",sumTf(tkn.getStr(),termMap.get(tkn).entrySet()));
+                        }
+                    }
+                    catch(NullPointerException e){
+                        System.out.println("the term is " +tkn.getStr());
+                    }
                 }
             }
             mutex.release();

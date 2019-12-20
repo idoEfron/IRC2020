@@ -3,20 +3,25 @@ package Model;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
+import java.util.concurrent.Semaphore;
 
 public class ReadFile implements  Runnable{
     //protected ArrayList<String> allFile;
     private List<File> subFolder;
-    private String[] splits;
     private Indexer index;
     private boolean stem;
-    String stopWordsPath;
+    private String stopWordsPath;
+    private static Semaphore mutex;
+    private static int docs;
 
     /**
      * this is the constructor of the read file
@@ -32,6 +37,9 @@ public class ReadFile implements  Runnable{
         index=i;
         stem = stemming;
         this.stopWordsPath = stopWordsPath;
+        if(mutex==null){
+            mutex = new Semaphore(1);
+        }
     }
 
     /**
@@ -39,6 +47,7 @@ public class ReadFile implements  Runnable{
      */
     @Override
     public void run() {
+        ArrayList<String> splits = new ArrayList<>();
         Scanner file3 = null;
         int counter = 0;//delete
         File[] files1 = null;
@@ -56,13 +65,20 @@ public class ReadFile implements  Runnable{
                     file3.close();
                 }
                 try {
-                    text =text+ new String(Files.readAllBytes(Paths.get(TxtPaths)), StandardCharsets.UTF_8);
+                    text = new String(Files.readAllBytes(Paths.get(TxtPaths)), StandardCharsets.UTF_8);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                splits = text.split("</DOC>");
+                splits.addAll(Arrays.asList(text.split("</DOC>")));
+                try {
+                    mutex.acquire();
+                    docs=docs+text.split("</DOC>").length-1;
+                    mutex.release();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
                 //allFile.addAll(Arrays.asList(splits));//
-                counter = counter + splits.length - 1;//delete
+                counter = counter + splits.size()- 1;//delete
              }
         }
         try {
@@ -94,5 +110,13 @@ public class ReadFile implements  Runnable{
     public void setSubFolder(List<File> subFolder) {
         this.subFolder = subFolder;
     }
+    public static int getDocs() {
+        return docs;
+    }
+
+    public static void setDocs(int docs) {
+        ReadFile.docs = docs;
+    }
+
 
 }

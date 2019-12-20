@@ -49,26 +49,39 @@ public class Merge implements Runnable {
         if(mergedText!=null && mergedText.size()>0){
             mergedText.addAll(Files.readAllLines(merged.toPath()));
             Collections.sort(mergedText,String.CASE_INSENSITIVE_ORDER);
-            for (int i=mergedText.size()-1;i>=0;i--){
-                String term = mergedText.get(i).substring(0,mergedText.get(i).indexOf(':'));
-                if(Character.isLowerCase(term.charAt(0))){
-                    if(i>0){
-                        if(Character.isUpperCase(mergedText.get(i-1).charAt(0))){
-                            if(term.toLowerCase().equals(mergedText.get(i-1).substring(0,mergedText.get(i-1).indexOf(':')).toLowerCase())){
-                                String suffix = mergedText.get(i-1).substring(mergedText.get(i-1).indexOf(": ")+2);
-                                mergedText.set(i,mergedText.get(i)+suffix);
-                                mergedText.remove(i-1);
+
+            for (int i=mergedText.size()-1;i>0;i--){
+                if(mergedText.get(i).contains(":")){
+                    if(mergedText.get(i-1).contains(":")){
+                        String term = mergedText.get(i).substring(0,mergedText.get(i).indexOf(":"));
+                        if(Character.isLowerCase(term.charAt(0))){
+                            if(i>0){
+                                if(Character.isUpperCase(mergedText.get(i-1).charAt(0))){
+                                    if(term.toLowerCase().equals(mergedText.get(i-1).substring(0,mergedText.get(i-1).indexOf(":")).toLowerCase())){
+                                        String suffix = mergedText.get(i-1).substring(mergedText.get(i-1).indexOf(": ")+2);
+                                        mergedText.set(i,mergedText.get(i)+suffix);
+                                        mergedText.remove(i-1);
+                                    }
+                                }
+                                else{
+                                    mergeHelper(mergedText, i, term);
+                                }
                             }
                         }
                         else{
-                            mergeHelper(mergedText, i, term);
+                            if(i>0){
+                                mergeHelper(mergedText, i, term);
+                            }
                         }
                     }
+                    else{
+                        mergedText.remove(i-1);
+                        i++;
+                    }
+
                 }
                 else{
-                    if(i>0){
-                        mergeHelper(mergedText, i, term);
-                    }
+                    mergedText.remove(i);
                 }
 
             }

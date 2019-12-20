@@ -107,6 +107,7 @@ public class Controller {
                 System.gc();
                 txtPosting.clear();
                 txtBrowse.clear();
+                ReadFile.setDocs(0);
 
                 showAlert("File deleted successfully");
             } else {

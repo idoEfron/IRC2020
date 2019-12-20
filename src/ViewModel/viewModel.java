@@ -120,9 +120,11 @@ public class viewModel {
         writer.flush();
         writer.close();
 
+        //System.out.println(ReadFile.docs);
+
         int[] corpusInfo = new int[2];
         corpusInfo[0] = index.getNumberOfTerms();
-        corpusInfo[1] = index.getNumberOrDocuments();
+        corpusInfo[1] = ReadFile.getDocs();
         return corpusInfo;
     }
 
@@ -207,7 +209,7 @@ public class viewModel {
         Indexer index = new Indexer(selected, postPath);
         BufferedReader br = new BufferedReader(new FileReader(file));
         String st;
-        Map<String, Map<String, Integer>> termDictionary = new HashMap<>();
+        Map<String, Map<String, Integer>> termDictionary = new TreeMap<>();
         index.clearMap();
         while ((st = br.readLine()) != null) {
             String[] term = st.split(">");
