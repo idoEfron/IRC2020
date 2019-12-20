@@ -73,47 +73,21 @@ public class Indexer {
             if(Character.isLetter(tkn.getStr().charAt(0))){
                 if(lines.containsKey(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getFile()+".txt")){
                     insertToLines(tkn,termMap,lines,Character.toString(tkn.getStr().toLowerCase().charAt(0)));
-                    /*lines.get(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getFile()+".txt").add(tkn.getStr() +" : ");
-                    Set <Map.Entry<String,ArrayList<String>>> map = termMap.get(tkn).entrySet();
-                    for (Map.Entry<String,ArrayList<String>> me : map){
-                        lines.get(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getFile()+".txt").add("<"+me.getKey()+"|" + me.getValue().get(0)+"|"+me.getValue().get(1)+"|"+me.getValue().get(2)+">");
-                    }
-                    lines.get(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getFile()+".txt").add("\n");
-                    */
                 }
                 else{
                     lines.put(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getFile()+".txt",new ArrayList<String>());
                     insertToLines(tkn,termMap,lines,Character.toString(tkn.getStr().toLowerCase().charAt(0)));
-                    /*
-                    lines.get(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getFile()+".txt").add(tkn.getStr() +" : ");
-                    Set <Map.Entry<String,ArrayList<String>>> map = termMap.get(tkn).entrySet();
-                    for (Map.Entry<String,ArrayList<String>> me : map){
-                        lines.get(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getFile()+".txt").add("<"+me.getKey()+"|" + me.getValue().get(0)+"|"+me.getValue().get(1)+"|"+me.getValue().get(2) +">");
-                    }
-                    lines.get(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getFile()+".txt").add("\n");*/
+
                 }
 
             }
             else{
                 if(lines.containsKey(subFolderTerms.getPath()+"/"+"special/"+tkn.getFile()+".txt")){
                     insertToLines(tkn,termMap,lines,"special");
-                    /*lines.get(subFolderTerms.getPath()+"/"+"special/"+tkn.getFile()+".txt").add(tkn.getStr() +" : ");
-                    Set <Map.Entry<String,ArrayList<String>>> map = termMap.get(tkn).entrySet();
-                    for (Map.Entry<String,ArrayList<String>> me : map){
-                        lines.get(subFolderTerms.getPath()+"/"+"special/"+tkn.getFile()+".txt").add("<"+me.getKey()+"|" + me.getValue().get(0)+"|"+me.getValue().get(1)+"|"+me.getValue().get(2) +">");
-                    }
-                    lines.get(subFolderTerms.getPath()+"/"+"special/"+tkn.getFile()+".txt").add("\n");*/
                 }
                 else{
                     lines.put(subFolderTerms.getPath()+"/"+"special/"+tkn.getFile()+".txt",new ArrayList<String>());
                     insertToLines(tkn,termMap,lines,"special");
-                    /*
-                    lines.get(subFolderTerms.getPath()+"/"+"special/"+tkn.getFile()+".txt").add(tkn.getStr() +" : ");
-                    Set <Map.Entry<String,ArrayList<String>>> map = termMap.get(tkn).entrySet();
-                    for (Map.Entry<String,ArrayList<String>> me : map){
-                        lines.get(subFolderTerms.getPath()+"/"+"special/"+tkn.getFile()+".txt").add("<"+me.getKey()+"|" + me.getValue().get(0)+"|"+me.getValue().get(1)+"|"+me.getValue().get(2) +">");
-                    }
-                    lines.get(subFolderTerms.getPath()+"/"+"special/"+tkn.getFile()+".txt").add("\n");*/
                 }
             }
             mutex.acquire();

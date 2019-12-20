@@ -125,6 +125,8 @@ public class viewModel {
         int[] corpusInfo = new int[2];
         corpusInfo[0] = index.getNumberOfTerms();
         corpusInfo[1] = ReadFile.getDocs();
+
+        ReadFile.setDocs(0);
         return corpusInfo;
     }
 
