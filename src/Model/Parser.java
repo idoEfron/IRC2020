@@ -156,7 +156,7 @@ public class Parser {
         //String fileName = "stopwords.txt";
         ClassLoader classLoader = ClassLoader.getSystemClassLoader();
         if (this.stopwords.size() == 0) {
-            File stopWordsFile = new File(stopWordsPath + "/stopwords.txt");/****************////////////////
+            File stopWordsFile = new File(stopWordsPath + "/stop_words.txt");/****************////////////////
             String stopContent = new String(Files.readAllBytes(stopWordsFile.toPath()));
             String stopLines[] = stopContent.split("\\r?\\n");
             stopwords.addAll(Arrays.asList(stopLines));
@@ -537,9 +537,9 @@ public class Parser {
                 (current.contains("bn") && after.equals("Dollars")) || current.contains("%")) {
             if (after.contains("Thousand") || after.contains("Thousand".toLowerCase()) || after.contains("Thousand".toUpperCase())) {
                 putTerm(current, "K", docID, date, title);
-            } else if (!current.contains("$") && !afterTwo.equals("U.S") && !afterThree.equals("dollars") && (after.contains("Million") || after.contains("Million".toLowerCase()) || after.contains("Million".toUpperCase()))) {
+            } else if (!current.contains("$") && !afterTwo.equals("U.S.") && !afterThree.equals("dollars") && (after.contains("Million") || after.contains("Million".toLowerCase()) || after.contains("Million".toUpperCase()))) {
                 putTerm(current, "M", docID, date, title);
-            } else if (!afterThree.equals("dollars") && !afterTwo.equals("U.S") && !current.contains("$") && (after.contains("Billion") || after.contains("Billion".toLowerCase()) || after.contains("Billion".toUpperCase()))) {
+            } else if (!afterThree.equals("dollars") && !afterTwo.equals("U.S.") && !current.contains("$") && (after.contains("Billion") || after.contains("Billion".toLowerCase()) || after.contains("Billion".toUpperCase()))) {
                 putTerm(current, "B", docID, date, title);
             }
             //***************checks if the case is percentage***************************////
@@ -574,8 +574,8 @@ public class Parser {
             //*******************dollars************************************************
             try {
                 if (after.equals("Dollars") ||
-                        current.contains("$") || (after.equals("billion") && afterTwo.equals("U.S")
-                        && afterThree.equals("dollars")) || (after.equals("million") && afterTwo.equals("U.S"))
+                        current.contains("$") || (after.equals("billion") && afterTwo.equals("U.S.")
+                        && afterThree.equals("dollars")) || (after.equals("million") && afterTwo.equals("U.S."))
                         && afterThree.equals("dollars")) {
 
                     if (current.contains("$")) {

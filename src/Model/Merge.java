@@ -77,6 +77,12 @@ public class Merge implements Runnable {
         }
     }
 
+    /**
+     * this function is a assisting function for the merge function
+     * @param mergedText
+     * @param i
+     * @param term
+     */
     private void mergeHelper(List<String> mergedText, int i, String term) {
         if(term.toLowerCase().equals(mergedText.get(i-1).substring(0,mergedText.get(i-1).indexOf(':')).toLowerCase())){
             String suffix = mergedText.remove(i).substring(mergedText.get(i-1).indexOf(": ")+2);
@@ -112,7 +118,7 @@ public class Merge implements Runnable {
     }
 
     /**
-     * this fumction tun the merge function
+     * this function run the merge function
      */
     @Override
     public void run() {

@@ -67,7 +67,6 @@ public class Indexer {
         Map <Token,Map<String,ArrayList<String>>> termMap = p.getTermMap();
         Set<Token> tknSet = termMap.keySet();
 
-
         long totalTime=0;
 
         Map <String ,List<String>> lines = new HashMap<>();
