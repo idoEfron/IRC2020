@@ -1,5 +1,8 @@
 .root{
-    -fx-background-color: #47aaf3;
+    -fx-background-image: url("../../../resources/notGoogle.jpg");
+    -fx-background-repeat: stretch;
+    -fx-background-size: cover, auto;
+    -fx-background-position: center center;
     -fx-background-repeat: stretch;
     -fx-background-size: cover, auto;
     -fx-background-position: center center;

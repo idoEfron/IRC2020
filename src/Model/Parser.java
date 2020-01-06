@@ -157,7 +157,7 @@ public class Parser {
         //String fileName = "stopwords.txt";
         ClassLoader classLoader = ClassLoader.getSystemClassLoader();
         if (this.stopwords.size() == 0) {
-            File stopWordsFile = new File(stopWordsPath + "/stopwords.txt");/****************////////////////
+            File stopWordsFile = new File(stopWordsPath + "/stop_words.txt");/****************////////////////
             String stopContent = new String(Files.readAllBytes(stopWordsFile.toPath()));
             String stopLines[] = stopContent.split("\\r?\\n");
             stopwords.addAll(Arrays.asList(stopLines));

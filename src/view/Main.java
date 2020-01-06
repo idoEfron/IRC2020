@@ -19,7 +19,7 @@ public class Main extends Application {
     public void start(Stage primaryStage) throws Exception{
         Parent root = FXMLLoader.load(getClass().getResource("openView.fxml"));
         primaryStage.setTitle("IR-2020");
-        scene = new Scene(root, 800, 500);
+        scene = new Scene(root, 1200, 650);
         scene.getStylesheets().add(getClass().getResource("openView.css").toExternalForm());
         primaryStage.setScene(scene);
         SetStageCloseEvent(primaryStage);
