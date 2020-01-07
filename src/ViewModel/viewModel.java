@@ -182,19 +182,20 @@ public class viewModel {
      * @throws IOException
      */
 
-    public String displayDictionary(boolean selected, String postPath) throws IOException {
-        String dictionary = "";
+    public LinkedList displayDictionary(boolean selected, String postPath) throws IOException {
+        //String dictionary = "";
         Indexer index = new Indexer(selected, postPath);
         Set<String> termsKey = index.getTermDictionary().keySet();
+        LinkedList<String> dictionary = new LinkedList<>();
         if (termsKey.size() > 0) {
             for (String term : termsKey) {
                 String currTerm = term;
-                currTerm = "The TF for : " + currTerm + " -> " + index.getTermDictionary().get(term).get(index.getTermDictionary().get(term).keySet().toArray()[0]);
-                dictionary = dictionary + currTerm + "\n";
+                dictionary.add("The TF for : " + currTerm + " -> " + index.getTermDictionary().get(term).get(index.getTermDictionary().get(term).keySet().toArray()[0]));
+                //dictionary = dictionary + currTerm + "\n";
             }
             return dictionary;
         } else {
-            return "";
+            return null;
         }
     }
 

@@ -231,7 +231,7 @@ public class Parser {
 
                         } else if (!currToken.contains("U.S") && !isNumber(currToken) && !(currToken.contains("%") || currToken.contains("$"))
                                 && !currToken.matches("[a-zA-Z0-9]a-zA-Z0-9]*")) {
-                            if (isNumric(currToken) == false) {
+                            if (isNumric(currToken) == false && isBothNumber(currToken)==false ) {
                                 if (checkBetween(currToken) == false) {
                                     String[] afterRemoving = currToken.split("\\W");
                                     if (afterRemoving.length > 1) {
@@ -276,10 +276,12 @@ public class Parser {
                                         }
                                     }
                                 }
-                            } else {
+                            } else if(isNumric(currToken)) {
+                                afterCleaning.add(new Token(currToken, docNo, date, title.contains(currToken), rf.getSubFolder().get(0).getName()));
+                            }else{
                                 token = cleanToken(currToken);
                                 if (token.contains("-")) {
-                                    if (isNumric(token)) {
+                                    if (isBothNumber(token)) {
                                         String[] arrToken = token.split("-");
                                         afterCleaning.add(new Token(arrToken[0], docNo, date, title.contains(arrToken[0]), rf.getSubFolder().get(0).getName()));
                                         afterCleaning.add(new Token(arrToken[1], docNo, date, title.contains(arrToken[1]), rf.getSubFolder().get(0).getName()));
@@ -375,22 +377,23 @@ public class Parser {
      * @return true or false
      */
     private boolean isNumric(String currToken) throws ParseException {
-        if (currToken.contains("-")) {
-            String[] arrTokens = currToken.split("-");
-            if (arrTokens.length == 2) {
-                if (isNumber(arrTokens[0]) && isNumber(arrTokens[1])) {
-                    return true;
-                }
-                return false;
-            }
-            return false;
-        }
         try {
             Double.parseDouble(currToken);
             return true;
         } catch (NumberFormatException e) {
             return false;
         }
+    }
+    private boolean isBothNumber(String currToken) throws ParseException {
+        if (currToken.contains("-")) {
+            String[] arrTokens = currToken.split("-");
+            if (arrTokens.length == 2) {
+                if (isNumber(arrTokens[0]) && isNumber(arrTokens[1])) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -690,7 +693,7 @@ public class Parser {
                 //wasn't able to parse term to double
             }
         } else if (current.contains("-")) {
-            if (isNumric(current)) {
+            if (isBothNumber(current)) {
                 String[] arrToken = current.split("-");
                 String sumOne = arrToken[0].replaceAll(",", "");
                 String sumTwo = arrToken[1].replaceAll(",", "");

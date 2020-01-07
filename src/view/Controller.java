@@ -4,12 +4,15 @@ import Model.Indexer;
 import Model.Merge;
 import Model.ReadFile;
 import ViewModel.viewModel;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.stage.DirectoryChooser;
@@ -34,6 +37,8 @@ public class Controller {
     private TextArea txtBrowse;
     @FXML
     private TextArea txtPosting;
+    @FXML
+    private TextArea txtQuery;
     @FXML
     private javafx.scene.control.CheckBox stemmerCheckB;
 
@@ -129,6 +134,9 @@ public class Controller {
         browser(txtBrowse);
     }
 
+    @FXML
+    public void BrowserButtonActionQuery(ActionEvent event){browser(txtQuery);}
+
     /**
      * set the browser to the users wanted path in view panel
      * @param txt
@@ -147,25 +155,20 @@ public class Controller {
      */
     @FXML
     private void displayDictionary() throws IOException {
-        String dictionary = "";
+        List<String > dictionary = new LinkedList<>();
         File file = null;
         if (postPath != null) {
             file = new File(txtPosting.getText());
         }
         if (txtPosting.getText().length() > 0 && file != null) {
             dictionary = viewModel.displayDictionary(stemmerCheckB.isSelected(), txtPosting.getText());
-            if (dictionary.length() > 0) {
-                TextArea textArea = new TextArea();
-                textArea.setText(dictionary);
-                ScrollPane pane = new ScrollPane();
-                pane.setContent(textArea);
+            if (dictionary.size() > 0) {
+                ObservableList<String> observableList = FXCollections.observableList(dictionary);
+                ListView listView = new ListView<>();
+                listView.setItems(observableList);
                 FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("dictionary.fxml"));
                 Parent tableParent = (Parent) fxmlLoader.load();
-                Scene scene = new Scene(pane, 400, 400);
-                pane.setFitToWidth(true);
-                pane.setFitToHeight(true);
-                pane.prefHeightProperty().bind(scene.heightProperty());
-                pane.prefWidthProperty().bind(scene.widthProperty());
+                Scene scene = new Scene(listView, 400, 400);
                 Stage stage = new Stage();
                 Stage window = new Stage();
                 window.setScene(scene);
