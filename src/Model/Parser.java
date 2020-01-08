@@ -209,7 +209,8 @@ public class Parser {
                 String txt = "";
                 if (docId.contains("<TEXT>") && docId.contains("</TEXT>")) {
                     txt = docId.substring(docId.indexOf("<TEXT>"), docId.indexOf("</TEXT>"));
-                    txt = txt.replaceAll("\\<.*?\\>|\\p{Ps}|\\p{Pe}| :", " ");
+                    txt = txt.replaceAll("\\<.*?\\>|\\p{Ps}|\\p{Pe}", " ");
+                    txt = txt.replaceAll(":"," ");
                     txt = txt.replace("--", " ");
                     String[] tokens = txt.split("\\s+|\n");
                     ArrayList<Token> afterCleaning = new ArrayList<>();
@@ -267,7 +268,7 @@ public class Parser {
                                             afterCleaning.add(new Token(token, docNo, date, title.contains(token), rf.getSubFolder().get(0).getName()));
 
                                         }
-                                        if (arrToken.length == 3) {
+                                        if (arrToken.length == 3 && Character.isLetter(arrToken[0].charAt(0)) && Character.isLetter(arrToken[1].charAt(0)) && Character.isLetter(arrToken[2].charAt(0))) {
                                             afterCleaning.add(new Token(arrToken[0], docNo, date, title.contains(arrToken[0]), rf.getSubFolder().get(0).getName()));
                                             afterCleaning.add(new Token(arrToken[1], docNo, date, title.contains(arrToken[1]), rf.getSubFolder().get(0).getName()));
                                             afterCleaning.add(new Token(arrToken[2], docNo, date, title.contains(arrToken[2]), rf.getSubFolder().get(0).getName()));

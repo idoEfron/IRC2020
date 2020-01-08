@@ -6,13 +6,12 @@ import java.io.IOException;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.Semaphore;
 
 public class Merge implements Runnable {
 
+    private static Semaphore mutex = new Semaphore(1);
     File[] directory;
 
     /**
@@ -28,7 +27,9 @@ public class Merge implements Runnable {
      * @param files the list of files
      * @throws IOException
      */
-    private void merge(File[] files) throws IOException {
+    private void merge(File[] files) throws IOException, InterruptedException {
+        mutex.acquire();
+        Map<String,Map<String,ArrayList<Integer>>> newIndex = Indexer.getTermDictionary();
         List<String> mergedText = new ArrayList<>();
         String parent = files[0].getParent();
         File merged = new File(parent+parent.substring(parent.lastIndexOf('\\'))+"_merged.txt");
@@ -64,13 +65,13 @@ public class Merge implements Runnable {
                                     }
                                 }
                                 else{
-                                    mergeHelper(mergedText, i, term);
+                                    mergeHelper(newIndex,mergedText, i, term);
                                 }
                             }
                         }
                         else{
                             if(i>0){
-                                mergeHelper(mergedText, i, term);
+                                mergeHelper(newIndex,mergedText, i, term);
                             }
                         }
                     }
@@ -85,8 +86,27 @@ public class Merge implements Runnable {
                 }
 
             }
+
+            documentLines(mergedText,newIndex);
             writeRaw(mergedText,merged.getPath());
             mergedText.clear();
+        }
+        Indexer.setTermDictionary(newIndex);
+        mutex.release();
+    }
+
+    private void documentLines(List<String> mergedText, Map<String, Map<String, ArrayList<Integer>>> newIndex) {
+        for(int i=0;i<mergedText.size();i++){
+            String term = mergedText.get(i).substring(0,mergedText.get(i).indexOf(":")-1);
+            if(newIndex.containsKey(term.toLowerCase())){
+                newIndex.get(term.toLowerCase()).get(newIndex.get(term.toLowerCase()).keySet().toArray()[0]).add(1,i);
+            }
+            else if(newIndex.containsKey(term.toUpperCase())){
+                newIndex.get(term.toUpperCase()).get(newIndex.get(term.toUpperCase()).keySet().toArray()[0]).add(1,i);
+            }
+            else{
+                newIndex.get(term).get(newIndex.get(term).keySet().toArray()[0]).add(1,i);
+            }
         }
     }
 
@@ -97,10 +117,11 @@ public class Merge implements Runnable {
      * @param term the term we want to merge its duplicates
      */
 
-    private void mergeHelper(List<String> mergedText, int i, String term) {
+    private void mergeHelper(Map<String,Map<String,ArrayList<Integer>>> newIndex,List<String> mergedText, int i, String term) {
         if(term.toLowerCase().equals(mergedText.get(i-1).substring(0,mergedText.get(i-1).indexOf(':')).toLowerCase())){
             String suffix = mergedText.remove(i).substring(mergedText.get(i-1).indexOf(": ")+2);
             mergedText.set(i-1,mergedText.get(i-1)+suffix);
+            i=i-1;
         }
     }
 
@@ -138,7 +159,7 @@ public class Merge implements Runnable {
     public void run() {
         try {
             merge(directory);
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
     }

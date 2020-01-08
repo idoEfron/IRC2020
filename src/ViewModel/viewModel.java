@@ -5,6 +5,7 @@ import Model.Merge;
 import Model.ReadFile;
 
 import java.io.*;
+import java.rmi.server.ExportException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -96,6 +97,7 @@ public class viewModel {
             while (!executor.isTerminated()) {
             }
         }
+
         executor = Executors.newFixedThreadPool(4);
         for (File file : subFolderTerms.listFiles()) {
             if (file.isDirectory()) {
@@ -114,8 +116,15 @@ public class viewModel {
         File file = new File( postPath + "/termDictionary.txt" );
         file.createNewFile();
         FileWriter writer = new FileWriter(file);
-        for (Map.Entry<String,Map<String,Integer>> records : Indexer.getTermDictionary().entrySet()) {
-            writer.write(records.getKey()+">"+records.getValue().keySet().toArray()[0]+">"+records.getValue().values().toArray()[0]+"\n");
+        for (Map.Entry<String,Map<String,ArrayList<Integer>>> records : Indexer.getTermDictionary().entrySet()) {
+            try{
+                Integer tf = (records.getValue().get(records.getValue().keySet().toArray()[0])).get(0);
+                Integer line = (records.getValue().get(records.getValue().keySet().toArray()[0])).get(1);
+                writer.write(records.getKey()+">"+records.getValue().keySet().toArray()[0]+">"+(records.getValue().get(records.getValue().keySet().toArray()[0])).get(0)+">"+(records.getValue().get(records.getValue().keySet().toArray()[0])).get(1)+"\n");
+            }
+            catch(Exception e){
+                System.out.println(records.getKey());
+            }
         }
         writer.flush();
         writer.close();
@@ -210,13 +219,14 @@ public class viewModel {
         Indexer index = new Indexer(selected, postPath);
         BufferedReader br = new BufferedReader(new FileReader(file));
         String st;
-        Map<String, Map<String, Integer>> termDictionary = new TreeMap<>();
+        Map<String, Map<String, ArrayList<Integer>>> termDictionary = new TreeMap<>();
         index.clearMap();
         while ((st = br.readLine()) != null) {
             String[] term = st.split(">");
             if(term.length==3) {
                 termDictionary.put(term[0], new HashMap<>());
-                termDictionary.get(term[0]).put(term[1], Integer.parseInt(term[2]));
+                termDictionary.get(term[0]).put(term[1], new ArrayList<>());
+                termDictionary.get(term[0]).get(term[1]).set(0,Integer.parseInt(term[2]));
             }
         }
         index.setTermDictionary(termDictionary);
