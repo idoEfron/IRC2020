@@ -16,7 +16,7 @@ public class Parser {
 
     private Map<Token, Map<String, ArrayList<String>>> termMap;
     private HashSet<String> stopwords;
-     private Map<String, Map<String, ArrayList<String>>> entities = new HashMap<>();
+    private Map<String, Map<String, ArrayList<String>>> entities = new HashMap<>();
     private Map<String, String> months;
     private Map<String, String> mass;
     private Map<String, String> electrical;
@@ -26,6 +26,12 @@ public class Parser {
     private Set<String> termsInDoc;
     private ReadFile rf;
     private Indexer indexer;
+
+    public Map<String, Integer> getDocLength() {
+        return docLength;
+    }
+
+    private Map<String,Integer> docLength;
 
 
     /**
@@ -44,6 +50,7 @@ public class Parser {
         wordCounter = new HashMap<>();
         termsInDoc = new HashSet<>();
         stemming = stem;
+        docLength = new HashMap<>();
         maxTf = new HashMap<>();
         termMap = new HashMap<>();
         stopwords = new HashSet<String>();
@@ -213,6 +220,7 @@ public class Parser {
                     txt = txt.replaceAll(":"," ");
                     txt = txt.replace("--", " ");
                     String[] tokens = txt.split("\\s+|\n");
+                    docLength.put(docNo,tokens.length);
                     ArrayList<Token> afterCleaning = new ArrayList<>();
                     for (int y = 0; y < tokens.length; y++) {
                         String currToken = tokens[y];

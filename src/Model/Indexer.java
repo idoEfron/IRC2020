@@ -1,6 +1,8 @@
 package Model;
 
 
+import org.omg.PortableInterceptor.INACTIVE;
+
 import javax.annotation.processing.FilerException;
 import java.io.*;
 import java.util.*;
@@ -12,7 +14,15 @@ public class Indexer {
     private static HashMap<String, String> docDictionary = new HashMap<>();
     private File subFolderTerms;
     private File subFolderDocs;
-    private static Semaphore mutex = new Semaphore(1);;
+    //private static Semaphore mutex = new Semaphore(1);
+    private static double totalDocLength;
+
+    public static HashMap<String, String> getDocDictionary() {
+        return docDictionary;
+    }
+    public static double getTotalDocLength() {
+        return totalDocLength;
+    }
 
     /**
      *
@@ -82,9 +92,15 @@ public class Indexer {
      * @throws InterruptedException
      */
     public boolean addBlock(Parser p) throws IOException, InterruptedException {
-        mutex.acquire();
+
+        //mutex.acquire();
+        Map<String, Integer> docLength = p.getDocLength();
+        for(String docID : docLength.keySet()){
+            totalDocLength = totalDocLength+docLength.get(docID);
+        }
         boolean createdFile;
         File file = null;
+
         FileWriter filewriter = null;
         BufferedWriter bw =null;
         PrintWriter writer=null;
@@ -187,7 +203,7 @@ public class Indexer {
                     }
                 }
             }
-            mutex.release();
+           // mutex.release();
         }
         for (String str:lines.keySet()){
             writeRaw(lines.get(str),str);
@@ -210,7 +226,8 @@ public class Indexer {
             bw = new BufferedWriter(filewriter);
             writer = new PrintWriter(bw);
 
-            writer.print(p.getMaxTf().get(docID) + "," + p.getWordCounter().get(docID) + ">>");
+            // posting line format: maxTf,numOfUniqueWords,docLength
+            writer.print(p.getMaxTf().get(docID) + "," + p.getWordCounter().get(docID) + ","+p.getDocLength().get(docID));
             writer.close();
         }
 
@@ -271,6 +288,7 @@ public class Indexer {
      * @param filePath the path of destenation file
      * @throws IOException
      */
+
     //https://stackoverflow.com/questions/1062113/fastest-way-to-write-huge-data-in-text-file-java
     private static void writeRaw(List<String> records,String filePath) throws IOException {
         File file = new File( filePath );

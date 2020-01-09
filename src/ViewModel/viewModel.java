@@ -30,48 +30,8 @@ public class viewModel {
 
         if (stem) {
             createFolders(postPath,"StemmedCorpus");
-            /*
-            File directory = new File(postPath + "/StemmedCorpus");
-            directory.mkdir();
-            subFolderTerms = new File(postPath + "/StemmedCorpus/Terms");
-            subFolderTerms.mkdir();
-            File subFolderDocs = new File(postPath + "/StemmedCorpus/Docs");
-            subFolderDocs.mkdir();
-            for (char i = 'a'; i <= 'z'; i++) {
-                File Tfolder = new File(postPath + "/StemmedCorpus/Terms/" + i);
-                Tfolder.mkdir();
-                File merged = new File(subFolderTerms.getPath() + "/" + i, i + "_merged.txt");
-                merged.createNewFile();
-            }
-            File Sfolder = new File(postPath + "/StemmedCorpus/Terms/special");
-            Sfolder.mkdir();
-            File merged = new File(subFolderTerms.getPath() + "/special", "special" + "_merged.txt");
-            merged.createNewFile();
-            new File(subFolderDocs.getPath() + "/docDictionary").mkdir();
-            File mergedDoc = new File(subFolderDocs.getPath() + "/docDictionary", "docDictionary" + "_merged.txt");
-            mergedDoc.createNewFile();*/
         } else {
             createFolders(postPath,"Corpus");
-            /*
-            File directory = new File(postPath + "/Corpus");
-            directory.mkdir();
-            subFolderTerms = new File(postPath + "/Corpus/Terms");
-            subFolderTerms.mkdir();
-            File subFolderDocs = new File(postPath + "/Corpus/Docs");
-            subFolderDocs.mkdir();
-            for (char i = 'a'; i <= 'z'; i++) {
-                File Tfolder = new File(postPath + "/Corpus/Terms/" + i);
-                Tfolder.mkdir();
-                File merged = new File(subFolderTerms.getPath() + "/" + i, i + "_merged.txt");
-                merged.createNewFile();
-            }
-            File Sfolder = new File(postPath + "/Corpus/Terms/special");
-            Sfolder.mkdir();
-            File merged = new File(subFolderTerms.getPath() + "/special", "special" + "_merged.txt");
-            merged.createNewFile();
-            new File(subFolderDocs.getPath() + "/docDictionary").mkdir();
-            File mergedDoc = new File(subFolderDocs.getPath() + "/docDictionary", "docDictionary" + "_merged.txt");
-            mergedDoc.createNewFile();*/
         }
 
 
@@ -130,6 +90,8 @@ public class viewModel {
         writer.close();
 
         //System.out.println(ReadFile.docs);
+        Ranker rank = new Ranker();
+        int tf = rank.getTF("assist","FBIS3-61570");
 
         int[] corpusInfo = new int[2];
         corpusInfo[0] = index.getNumberOfTerms();
