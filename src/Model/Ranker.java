@@ -31,17 +31,13 @@ public class Ranker {
         }
     }
 
-    public double score(ArrayList<String> query,String doc){
-        Set<String> querySet = new HashSet<>();
-        for(String str: query){
-            querySet.add(str);
-        }
-        querySet.retainAll(Indexer.getTermDictionary().keySet());
+    public double score(Set<String> query,String doc){
+
         double totalScore =0;
         int numberOfDocs = ReadFile.getDocs();
         double avrgDocLength = Indexer.getTotalDocLength()/(double)numberOfDocs;
         int docLength = getDocLength(doc);
-        for(String term: querySet){
+        for(String term: query){
             double idf = getIDF(numberOfDocs,getDF(term));
             double numerator = getTF(term,doc)*(k_factor+1);
             double lengthDivision = docLength/avrgDocLength;

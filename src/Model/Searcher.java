@@ -14,7 +14,7 @@ public class Searcher {
     private ReadFile readFile;
     private Indexer indexer;
     private String query;
-    ArrayList<String> queriesTokens;
+    private ArrayList<String> queriesTokens;
 
     public Searcher(String query, String stopWordPath, Boolean stem) throws IOException, ParseException {
         indexer = new Indexer(stem, stopWordPath);
@@ -24,6 +24,9 @@ public class Searcher {
         queriesTokens = new ArrayList<>();
     }
 
+    public ArrayList<String> getQueriesTokens() {
+        return queriesTokens;
+    }
 
     public void readQuery() throws ParseException, InterruptedException, IOException {
         List<Query> listQueries = new ArrayList<>();

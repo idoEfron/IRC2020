@@ -88,10 +88,6 @@ public class viewModel {
         writer.flush();
         writer.close();
 
-        //System.out.println(ReadFile.docs);
-        Ranker rank = new Ranker();
-        int tf = rank.getTF("assist","FBIS3-61570");
-
         int[] corpusInfo = new int[2];
         corpusInfo[0] = index.getNumberOfTerms();
         corpusInfo[1] = ReadFile.getDocs();
@@ -198,10 +194,16 @@ public class viewModel {
     public void startQuery(String path, String stopWordsPath, boolean stem) throws IOException, ParseException, InterruptedException {
         Searcher searcher = new Searcher(path, stopWordsPath, stem);
         searcher.readQuery();
+
     }
 
     public void startSingleQuery(String query, String stopWordsPath, boolean stem) throws IOException, ParseException, InterruptedException {
         Searcher searcher = new Searcher(query, stopWordsPath, stem);
         searcher.startSingleQuery();
+
+        List<String> queryToRank = searcher.getQueriesTokens();
+        queryToRank.retainAll(Indexer.getTermDictionary().keySet());
+
+
     }
 }
