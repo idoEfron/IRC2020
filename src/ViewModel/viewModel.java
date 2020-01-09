@@ -5,6 +5,7 @@ import Model.Merge;
 import Model.ReadFile;
 
 import java.io.*;
+import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -14,8 +15,9 @@ public class viewModel {
 
     /**
      * this function is the starting function of the program processes
-     * @param stem if stemming is checked
-     * @param postPath  the posting files path
+     *
+     * @param stem       if stemming is checked
+     * @param postPath   the posting files path
      * @param corpusPath the corpus path
      * @return int array of the alert details
      * @throws IOException
@@ -28,7 +30,7 @@ public class viewModel {
         ExecutorService executor = Executors.newFixedThreadPool(4);
 
         if (stem) {
-            createFolders(postPath,"StemmedCorpus");
+            createFolders(postPath, "StemmedCorpus");
             /*
             File directory = new File(postPath + "/StemmedCorpus");
             directory.mkdir();
@@ -50,7 +52,7 @@ public class viewModel {
             File mergedDoc = new File(subFolderDocs.getPath() + "/docDictionary", "docDictionary" + "_merged.txt");
             mergedDoc.createNewFile();*/
         } else {
-            createFolders(postPath,"Corpus");
+            createFolders(postPath, "Corpus");
             /*
             File directory = new File(postPath + "/Corpus");
             directory.mkdir();
@@ -108,14 +110,13 @@ public class viewModel {
         }
 
 
-
         Indexer index = new Indexer(stem, postPath);
 
-        File file = new File( postPath + "/termDictionary.txt" );
+        File file = new File(postPath + "/termDictionary.txt");
         file.createNewFile();
         FileWriter writer = new FileWriter(file);
-        for (Map.Entry<String,Map<String,Integer>> records : Indexer.getTermDictionary().entrySet()) {
-            writer.write(records.getKey()+">"+records.getValue().keySet().toArray()[0]+">"+records.getValue().values().toArray()[0]+"\n");
+        for (Map.Entry<String, Map<String, Integer>> records : Indexer.getTermDictionary().entrySet()) {
+            writer.write(records.getKey() + ">" + records.getValue().keySet().toArray()[0] + ">" + records.getValue().values().toArray()[0] + "\n");
         }
         writer.flush();
         writer.close();
@@ -131,6 +132,7 @@ public class viewModel {
 
     /**
      * this function deletes all files and directories in given directory/file
+     *
      * @param file the file in which we want to recursively delete all files and directories
      */
     public void delete(File file) {
@@ -148,25 +150,26 @@ public class viewModel {
 
     /**
      * this function creates all needed folders of the program
+     *
      * @param postPath posting files path
-     * @param folder folder name depending on with stemming or without
+     * @param folder   folder name depending on with stemming or without
      * @throws IOException
      */
 
-    private void createFolders(String postPath,String folder) throws IOException {
-        File directory = new File(postPath + "/"+folder);
+    private void createFolders(String postPath, String folder) throws IOException {
+        File directory = new File(postPath + "/" + folder);
         directory.mkdir();
-        subFolderTerms = new File(postPath + "/"+folder+"/Terms");
+        subFolderTerms = new File(postPath + "/" + folder + "/Terms");
         subFolderTerms.mkdir();
-        File subFolderDocs = new File(postPath + "/"+folder+"/Docs");
+        File subFolderDocs = new File(postPath + "/" + folder + "/Docs");
         subFolderDocs.mkdir();
         for (char i = 'a'; i <= 'z'; i++) {
-            File Tfolder = new File(postPath + "/"+folder+"/Terms/" + i);
+            File Tfolder = new File(postPath + "/" + folder + "/Terms/" + i);
             Tfolder.mkdir();
             File merged = new File(subFolderTerms.getPath() + "/" + i, i + "_merged.txt");
             merged.createNewFile();
         }
-        File Sfolder = new File(subFolderTerms.getPath()+"/special");
+        File Sfolder = new File(subFolderTerms.getPath() + "/special");
         Sfolder.mkdir();
         File merged = new File(subFolderTerms.getPath() + "/special", "special" + "_merged.txt");
         merged.createNewFile();
@@ -176,8 +179,9 @@ public class viewModel {
 
     /**
      * this function display the dictionary generated from the program
+     *
      * @param selected stemming selected/not selected
-     * @param postPath  posting files path
+     * @param postPath posting files path
      * @return the String to be displayed
      * @throws IOException
      */
@@ -201,11 +205,11 @@ public class viewModel {
 
     /**
      * this function loads dictionary from the hard disk to RAM
+     *
      * @param selected stemming selected/not selected
      * @param postPath posting file path
      * @throws IOException
      */
-
     public void loadDictionary(boolean selected, String postPath) throws IOException {
         File file = new File(postPath + "/termDictionary.txt");
         Indexer index = new Indexer(selected, postPath);
@@ -215,11 +219,21 @@ public class viewModel {
         index.clearMap();
         while ((st = br.readLine()) != null) {
             String[] term = st.split(">");
-            if(term.length==3) {
+            if (term.length == 3) {
                 termDictionary.put(term[0], new HashMap<>());
                 termDictionary.get(term[0]).put(term[1], Integer.parseInt(term[2]));
             }
         }
         index.setTermDictionary(termDictionary);
+    }
+
+    public void startQuery(String path, String stopWordsPath, boolean stem) throws IOException, ParseException, InterruptedException {
+        Searcher searcher = new Searcher(path, stopWordsPath, stem);
+        searcher.readQuery();
+    }
+
+    public void startSingleQuery(String query, String stopWordsPath, boolean stem) throws IOException, ParseException, InterruptedException {
+        Searcher searcher = new Searcher(query, stopWordsPath, stem);
+        searcher.startSingleQuery();
     }
 }

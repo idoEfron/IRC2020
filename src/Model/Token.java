@@ -22,7 +22,11 @@ public class Token {
         this.docId = docId;
         this.inTitle = inTitle;
         this.date = date;
-        file = fileName;
+        if(fileName==null){
+            file = "query";
+        }else {
+            file = fileName;
+        }
     }
 
     /**

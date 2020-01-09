@@ -99,9 +99,9 @@
       <Pane layoutX="1000.0" layoutY="200.0" prefHeight="800.0" prefWidth="698.0" BorderPane.alignment="CENTER">
          <children>
             <Separator layoutY="-1.0" orientation="VERTICAL" prefHeight="800.0" prefWidth="26.0" />
-            <TextArea layoutX="200.0" layoutY="175.0" prefHeight="50.0" prefWidth="300.0" />
-            <TextArea fx:id="txtQuery" layoutX="200.0" layoutY="238.0" prefHeight="50.0" prefWidth="300.0" />
-            <Button layoutX="510.0" layoutY="175.0" mnemonicParsing="false" prefHeight="50.0" prefWidth="180.0" text="Run" />
+            <TextArea fx:id="txtQuery" layoutX="200.0" layoutY="175.0" prefHeight="50.0" prefWidth="300.0" />
+            <TextArea fx:id="txtQueryPath" layoutX="200.0" layoutY="238.0" prefHeight="50.0" prefWidth="300.0" />
+            <Button layoutX="510.0" layoutY="175.0" mnemonicParsing="false" onAction="#startSingleQuery" prefHeight="50.0" prefWidth="180.0" text="Run" />
             <Button layoutX="510.0" layoutY="238.0" mnemonicParsing="false" onAction="#BrowserButtonActionQuery" prefHeight="50.0" prefWidth="180.0" text="Browes" />
             <Label layoutX="15.0" layoutY="175.0" prefHeight="50.0" prefWidth="176.0" text="Enter single query" textFill="#1b00ff">
                <font>
@@ -130,7 +130,7 @@
                   <Font name="System Bold Italic" size="20.0" />
                </font>
             </CheckBox>
-            <Button layoutX="510.0" layoutY="305.0" mnemonicParsing="false" prefHeight="50.0" prefWidth="180.0" text="Run queries file" />
+            <Button layoutX="510.0" layoutY="305.0" mnemonicParsing="false" onAction="#startQuery" prefHeight="50.0" prefWidth="180.0" text="Run queries file" />
             <Button layoutX="495.0" layoutY="370.0" mnemonicParsing="false" prefHeight="50.0" prefWidth="195.0" text="Display top five Entities" />
             <Button layoutX="495.0" layoutY="435.0" mnemonicParsing="false" prefHeight="50.0" prefWidth="195.0" text="Save Reasult" />
          </children>

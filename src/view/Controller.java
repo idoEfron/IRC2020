@@ -16,11 +16,13 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -41,9 +43,12 @@ public class Controller {
     private TextArea txtQuery;
     @FXML
     private javafx.scene.control.CheckBox stemmerCheckB;
+    @FXML
+    private TextArea txtQueryPath;
 
     /**
      * this function start the program via the view panel
+     *
      * @throws IOException
      */
     @FXML
@@ -76,7 +81,7 @@ public class Controller {
             }
             int[] corpusInfo = viewModel.start(stem, postPath, corpusPath);
             long endTime = System.currentTimeMillis();
-            if(corpusInfo.length==1){
+            if (corpusInfo.length == 1) {
                 showAlert("file already exist please select the reset button");
                 return;
 
@@ -89,6 +94,7 @@ public class Controller {
 
     /**
      * this function responsible of showing the alert
+     *
      * @param alertMessage the massage to be shown
      */
     private void showAlert(String alertMessage) {
@@ -135,7 +141,18 @@ public class Controller {
     }
 
     @FXML
-    public void BrowserButtonActionQuery(ActionEvent event){browser(txtQuery);}
+    public void BrowserButtonActionQuery(ActionEvent event) {
+        FileChooser fileChooser = new FileChooser();
+        File selectedFile = fileChooser.showOpenDialog(null);
+
+        if (selectedFile != null) {
+            txtQueryPath.setText(selectedFile.getPath());
+            System.out.println(("File selected: " + selectedFile.getName()));
+        } else {
+            System.out.println("File selection cancelled.");
+        }
+    }
+
 
     /**
      * set the browser to the users wanted path in view panel
@@ -148,7 +165,47 @@ public class Controller {
             txt.setText(selectedDirectory.getAbsolutePath());
         }
     }
+    @FXML
+    public void startQuery() throws IOException, ParseException, InterruptedException {
+        if(txtQueryPath.getText()==null||txtQueryPath.getText().equals("")){
+            showAlert("please enter queries path");
+            return;
+        }
+        if(txtPosting.getText()==null||txtPosting.getText().equals("")){
+            showAlert("no posting ");
+            return;
+        }
+        if(txtBrowse.getText()==null||txtBrowse.getText().equals("")){
+            showAlert("no corpus ");
+            return;
+        }
+        String path = txtQueryPath.getText();
+        viewModel.startQuery(path,txtBrowse.getText(),stemmerCheckB.isSelected());
+    }
 
+    @FXML
+    public void startSingleQuery() throws IOException, ParseException, InterruptedException {
+        String query = txtQuery.getText();
+        if(txtPosting.getText()==null){
+            showAlert("no posting ");
+            return;
+
+        }
+        if(txtBrowse.getText()==null){
+            showAlert("no corpus ");
+            return;
+        }
+        if(txtQuery.getText()==null){
+            showAlert("please enter query");
+            return;
+        }
+        if (!txtQuery.getText().contains("<num>")||!txtQuery.getText().contains("<title> ")){
+            showAlert("please enter correct query");
+            return;
+        }
+        viewModel.startSingleQuery(query,txtBrowse.getText(),stemmerCheckB.isSelected());
+
+    }
     /**
      * this is a controller function to show the dictionary in view panel
      * @throws IOException
@@ -162,7 +219,7 @@ public class Controller {
         }
         if (txtPosting.getText().length() > 0 && file != null) {
             dictionary = viewModel.displayDictionary(stemmerCheckB.isSelected(), txtPosting.getText());
-            if (dictionary.size() > 0) {
+            if (dictionary!=null &&dictionary.size() > 0) {
                 ObservableList<String> observableList = FXCollections.observableList(dictionary);
                 ListView listView = new ListView<>();
                 listView.setItems(observableList);
