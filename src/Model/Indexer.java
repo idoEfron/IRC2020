@@ -10,6 +10,7 @@ public class Indexer {
 
     private static Map<String, Map<String,Integer>> termDictionary = new TreeMap<>();
     private static HashMap<String, String> docDictionary = new HashMap<>();
+    private String postingPath;//todo ido add!!!!!!!!!!!!!!!!!!!!!!!!!!
     private File subFolderTerms;
     private File subFolderDocs;
     private static Semaphore mutex = new Semaphore(1);
@@ -38,7 +39,7 @@ public class Indexer {
      * @throws IOException exception
      */
     public Indexer(boolean stem, String postingPath) {
-
+        this.postingPath = postingPath;
         if(!stem){
             subFolderTerms = new File(postingPath+"/Corpus/Terms");
             subFolderDocs= new File(postingPath+"/Corpus/Docs");
@@ -48,6 +49,14 @@ public class Indexer {
             subFolderDocs= new File(postingPath+"/StemmedCorpus/Docs");
         }
 
+    }
+
+    /**
+     * todo ido add!!!!!!!!!!!!!!!!!!!!!!
+     * @return
+     */
+    public String getPostingPath() {
+        return postingPath;
     }
 
     /**

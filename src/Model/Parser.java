@@ -2,21 +2,21 @@ package Model;
 
 import snowball.ext.porterStemmer;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.text.DateFormat;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 
 public class Parser {
 
     private Map<Token, Map<String, ArrayList<String>>> termMap;
     private HashSet<String> stopwords;
-     private Map<String, Map<String, ArrayList<String>>> entities = new HashMap<>();
+    private Map<String, Map<String, ArrayList<String>>> entities = new HashMap<>();
     private Map<String, String> months;
     private Map<String, String> mass;
     private Map<String, String> electrical;
@@ -24,9 +24,16 @@ public class Parser {
     private Map<String, Integer> maxTf;
     private Map<String, Integer> wordCounter;
     private Set<String> termsInDoc;
+    private ArrayList<String> queryArray;
     private ReadFile rf;
     private Indexer indexer;
+    private boolean isQuery;
+    private String fileName;
+    private String filePath;
+    private Map<String , Integer> entitiesPerDoc;
 
+    private Map<String, Set<String>> topFiveEntitiesDocs;
+    ReentrantLock reentrantLock;
 
     /**
      * this is the constructor of the parser
@@ -38,16 +45,27 @@ public class Parser {
      * @throws IOException
      * @throws ParseException
      */
-    public Parser(boolean stem, ReadFile readFile, String stopWordsPath, Indexer indexer) throws IOException, ParseException {
+    public Parser(boolean stem, ReadFile readFile, String stopWordsPath, Indexer indexer, boolean isQuery) throws IOException, ParseException {
         this.indexer = indexer;
         rf = readFile;
         wordCounter = new HashMap<>();
         termsInDoc = new HashSet<>();
+        queryArray = new ArrayList<>();
         stemming = stem;
+        this.isQuery = isQuery;
         maxTf = new HashMap<>();
-        termMap = new HashMap<>();
+        termMap = new LinkedHashMap<>();
         stopwords = new HashSet<String>();
+        reentrantLock = new ReentrantLock();
+        topFiveEntitiesDocs = new HashMap<String, Set<String>>();
+        entitiesPerDoc = new HashMap<>();
         months = new HashMap<String, String>() {{
+            if (rf.getSubFolder() == null) {
+                fileName = "query";
+            } else {
+                fileName = rf.getSubFolder().get(0).getName();
+                filePath = rf.getSubFolder().get(0).getPath();
+            }
             put("January", "01");
             put("JANUARY", "01");
             put("JAN", "01");
@@ -172,14 +190,31 @@ public class Parser {
      * @param docList that needed to be parse and splited
      */
     public void parseDocs(ArrayList<String> docList) throws ParseException, IOException, InterruptedException {
+        if (isQuery) {
+            termMap.clear();
+        }
         String docNo = "";
         String title = "";
         String date = "";
         for (int i = 0; i < docList.size(); i++) {
             if (!docList.get(i).equals("\n") && !docList.get(i).equals("\n\n\n") && !docList.get(i).equals("\n\n\n\n") && !docList.get(i).equals("\n\n")) {
                 String docId = docList.get(i);
+                 docNo = "";
+                 title = "";
+                 date = "";
                 if (docId.contains("<DOCNO>")) {
                     docNo = docId.substring(docId.indexOf("<DOCNO>") + 8, docId.indexOf("</DOCNO>") - 1);
+                   // System.out.println(filePath + " , " + docNo);
+//                    try {
+//                        reentrantLock.lock();//todo ido add!!!!!!!!!!!!!!!!!!!!!!!!!lock
+//                        String path = indexer.getPostingPath() + "/docToFilePath.txt";
+//                        PrintWriter printWriter = new PrintWriter(new BufferedWriter(new FileWriter(path, true)));
+//                        printWriter.append(docNo + "," + filePath+ "\n");
+//                        printWriter.close();
+//                        reentrantLock.unlock();
+//                    } catch (NullPointerException e) {
+//                        System.out.println(e);
+//                    }
 
                 }
                 if (docId.contains("<TI>")) {
@@ -225,88 +260,110 @@ public class Parser {
                             for (int j = 0; j < afterRemoving.length; j++) {
                                 token = cleanToken(afterRemoving[j]);
                                 if (token.length() > 0) {
-                                    afterCleaning.add(new Token(token, docNo, date, title.contains(token), rf.getSubFolder().get(0).getName()));
+                                    afterCleaning.add(new Token(token, docNo, date, title.contains(token), fileName));
                                 }//token,token.length(),docList.get(i).indexOf(token)
                             }
 
                         } else if (!currToken.contains("U.S") && !isNumber(currToken) && !(currToken.contains("%") || currToken.contains("$"))
                                 && !currToken.matches("[a-zA-Z0-9]a-zA-Z0-9]*")) {
-                            if (isNumric(currToken) == false && isBothNumber(currToken)==false ) {
+                            if (isNumric(currToken) == false && isBothNumber(currToken) == false) {
                                 if (checkBetween(currToken) == false) {
                                     String[] afterRemoving = currToken.split("\\W");
                                     if (afterRemoving.length > 1) {
                                         if (afterRemoving.length == 2 && (isNumric(afterRemoving[0]) && isNumric(afterRemoving[1])) ||
                                                 (isNumric(afterRemoving[1]) && afterRemoving[0].equals("") && afterRemoving[1].length() + 1 == currToken.length()) ||
                                                 (isNumric(afterRemoving[0]) && afterRemoving[1].contains("m"))) {
-                                            afterCleaning.add(new Token(currToken, docNo, date, title.contains(currToken), rf.getSubFolder().get(0).getName()));
+                                            afterCleaning.add(new Token(currToken, docNo, date, title.contains(currToken), fileName));
                                         } else {
                                             for (int j = 0; j < afterRemoving.length; j++) {
                                                 token = cleanToken(afterRemoving[j]);
                                                 if (token.length() > 0) {
-                                                    afterCleaning.add(new Token(token, docNo, date, title.contains(token), rf.getSubFolder().get(0).getName()));
+                                                    afterCleaning.add(new Token(token, docNo, date, title.contains(token), fileName));
                                                 }
                                             }
                                         }
                                     } else if (afterRemoving.length == 1) {
                                         token = cleanToken(afterRemoving[0]);
-                                        afterCleaning.add(new Token(token, docNo, date, title.contains(token), rf.getSubFolder().get(0).getName()));
+                                        afterCleaning.add(new Token(token, docNo, date, title.contains(token), fileName));
                                     }
                                 } else {
                                     token = cleanToken(currToken);
                                     if (token.contains("-") && checkBetween(token)) {
                                         String[] arrToken = token.split("-");
                                         if (arrToken.length == 2) {
-                                            afterCleaning.add(new Token(arrToken[0], docNo, date, title.contains(arrToken[0]), rf.getSubFolder().get(0).getName()));
-                                            afterCleaning.add(new Token(arrToken[1], docNo, date, title.contains(arrToken[1]), rf.getSubFolder().get(0).getName()));
+                                            afterCleaning.add(new Token(arrToken[0], docNo, date, title.contains(arrToken[0]), fileName));
+                                            afterCleaning.add(new Token(arrToken[1], docNo, date, title.contains(arrToken[1]), fileName));
                                             if (y - 1 >= 0 && isNumber(tokens[y - 1]) && (arrToken[0].equalsIgnoreCase("Thousand") || arrToken[0].equalsIgnoreCase("Million") || arrToken[0].equalsIgnoreCase("Billion"))) {
                                                 token = addMeasure(tokens[y - 1], token);
                                             }
                                             if (y + 1 < tokens.length && isNumber(arrToken[1]) && (tokens[y + 1].equalsIgnoreCase("Thousand") || tokens[y + 1].equalsIgnoreCase("Million") || tokens[y + 1].equalsIgnoreCase("Billion"))) {
                                                 token = addMeasure(tokens[y + 1], token);
                                             }
-                                            afterCleaning.add(new Token(token, docNo, date, title.contains(token), rf.getSubFolder().get(0).getName()));
+                                            afterCleaning.add(new Token(token, docNo, date, title.contains(token), fileName));
 
                                         }
                                         if (arrToken.length == 3) {
-                                            afterCleaning.add(new Token(arrToken[0], docNo, date, title.contains(arrToken[0]), rf.getSubFolder().get(0).getName()));
-                                            afterCleaning.add(new Token(arrToken[1], docNo, date, title.contains(arrToken[1]), rf.getSubFolder().get(0).getName()));
-                                            afterCleaning.add(new Token(arrToken[2], docNo, date, title.contains(arrToken[2]), rf.getSubFolder().get(0).getName()));
-                                            afterCleaning.add(new Token(token, docNo, date, title.contains(token), rf.getSubFolder().get(0).getName()));
-
+                                            afterCleaning.add(new Token(arrToken[0], docNo, date, title.contains(arrToken[0]), fileName));
+                                            afterCleaning.add(new Token(arrToken[1], docNo, date, title.contains(arrToken[1]), fileName));
+                                            afterCleaning.add(new Token(arrToken[2], docNo, date, title.contains(arrToken[2]), fileName));
+                                            afterCleaning.add(new Token(token, docNo, date, title.contains(token), fileName));
                                         }
                                     }
                                 }
-                            } else if(isNumric(currToken)) {
-                                afterCleaning.add(new Token(currToken, docNo, date, title.contains(currToken), rf.getSubFolder().get(0).getName()));
-                            }else{
+                            } else if (isNumric(currToken)) {
+                                afterCleaning.add(new Token(currToken, docNo, date, title.contains(currToken), fileName));
+                            } else {
                                 token = cleanToken(currToken);
                                 if (token.contains("-")) {
                                     if (isBothNumber(token)) {
                                         String[] arrToken = token.split("-");
-                                        afterCleaning.add(new Token(arrToken[0], docNo, date, title.contains(arrToken[0]), rf.getSubFolder().get(0).getName()));
-                                        afterCleaning.add(new Token(arrToken[1], docNo, date, title.contains(arrToken[1]), rf.getSubFolder().get(0).getName()));
-                                        afterCleaning.add(new Token(token, docNo, date, title.contains(token), rf.getSubFolder().get(0).getName()));
+                                        afterCleaning.add(new Token(arrToken[0], docNo, date, title.contains(arrToken[0]), fileName));
+                                        afterCleaning.add(new Token(arrToken[1], docNo, date, title.contains(arrToken[1]), fileName));
+                                        afterCleaning.add(new Token(token, docNo, date, title.contains(token), fileName));
                                     }
                                 } else {
                                     if (token.length() > 0) {
-                                        afterCleaning.add(new Token(token, docNo, date, title.contains(token), rf.getSubFolder().get(0).getName()));
+                                        afterCleaning.add(new Token(token, docNo, date, title.contains(token), fileName));
                                     }
                                 }
                             }
                         } else {
                             token = cleanToken(tokens[y]);
                             if (token.length() > 0) {
-                                afterCleaning.add(new Token(token, docNo, date, title.contains(token), rf.getSubFolder().get(0).getName()));
+                                afterCleaning.add(new Token(token, docNo, date, title.contains(token), fileName));
                             }
                         }//bracket on the else
                     }//for on the tokens after split
 
                     handler(afterCleaning, docNo, date, title);
                 }
-
             }
-
             wordCounter.put(docNo, termsInDoc.size());
+                if(entitiesPerDoc.size()>5) {
+                    int numberOfEntities = 0;
+                    Set<String> topFive = new HashSet<>();
+                    while (numberOfEntities!=5) {
+                        //int max = entitiesPerDoc.get(0);
+                        Set<String> str = entitiesPerDoc.keySet();
+                        String [] strArr = new String[entitiesPerDoc.keySet().size()];
+                        strArr = str.toArray(strArr);
+                        int max = entitiesPerDoc.get(strArr[0]);
+                         String maxString  =strArr[0];
+                        for (int k = 1; k < strArr.length; k++) {
+                            if (entitiesPerDoc.get(strArr[k])>max) {
+                                max = entitiesPerDoc.get(strArr[k]);
+                                maxString = strArr[k];
+                            }
+                        }
+                        entitiesPerDoc.remove(maxString);
+                        topFive.add(maxString);
+                        numberOfEntities++;
+                    }
+                    topFiveEntitiesDocs.put(docNo,topFive);
+                }else if(entitiesPerDoc.keySet().size()>0){
+                topFiveEntitiesDocs.put(docNo,entitiesPerDoc.keySet());
+            }
+            entitiesPerDoc.clear();
             termsInDoc.clear();
         }//bracket on the for on the doc list's
 
@@ -314,7 +371,18 @@ public class Parser {
         months.clear();
         mass.clear();
         electrical.clear();
-        indexer.addBlock(this);
+        if (isQuery) {
+            queryArray = new ArrayList<>();
+            for (Token t : termMap.keySet()) {
+                queryArray.add(t.getStr());
+            }
+        } else {
+            indexer.addBlock(this);
+        }
+    }
+
+    public ArrayList<String> getQueryArray() {
+        return queryArray;
     }
 
     private String addMeasure(String addTo, String tokenToAdd) throws ParseException {
@@ -384,6 +452,7 @@ public class Parser {
             return false;
         }
     }
+
     private boolean isBothNumber(String currToken) throws ParseException {
         if (currToken.contains("-")) {
             String[] arrTokens = currToken.split("-");
@@ -423,7 +492,7 @@ public class Parser {
                         if (title.contains(strArray[k])) {
                             inTitle = true;
                         }
-                        rangeList.add(new Token(strArray[k], docID, date, inTitle, rf.getSubFolder().get(0).getName()));
+                        rangeList.add(new Token(strArray[k], docID, date, inTitle, fileName));
                     }
                     /*for (int j = 0; j < rangeList.size(); j++) {
                         if (rangeList.get(j).getStr().equals("")) {
@@ -434,6 +503,9 @@ public class Parser {
                 }
             }
         }
+
+
+
     }
 
     /**
@@ -510,7 +582,6 @@ public class Parser {
         String afterTwo = "";
         String afterThree = "";
         String num = current.replaceAll(",", "");
-
 
         if (index > 0) {
             before = tokens.get(index - 1).getStr();
@@ -656,7 +727,7 @@ public class Parser {
                                 break;
                         }
                         Boolean inTitle = title.contains(current);
-                        Token currToken = new Token(current, docID, date, inTitle, rf.getSubFolder().get(0).getName());
+                        Token currToken = new Token(current, docID, date, inTitle, fileName);
                         if (termMap.containsKey(currToken)) {
                             if (termMap.get(currToken).containsKey(docID)) {
                                 termMap.get(currToken).get(docID).set(0, String.valueOf(Integer.parseInt(termMap.get(currToken).get(docID).get(0)) + 1));
@@ -748,7 +819,7 @@ public class Parser {
      */
     private void putTerm(String current, String character, String docId, String date, String title) {
         boolean inTitle = title.contains(current + character);
-        Token currToken = new Token(current + character, docId, date, inTitle, rf.getSubFolder().get(0).getName());
+        Token currToken = new Token(current + character, docId, date, inTitle, fileName);
         if (termMap.containsKey(currToken)) {
             if (termMap.get(currToken).containsKey(docId)) {
                 termMap.get(currToken).get(docId).set(0, String.valueOf(Integer.parseInt(termMap.get(currToken).get(docId).get(0)) + 1));
@@ -776,7 +847,7 @@ public class Parser {
     }
 
     /**
-     * this function update thr tf of a term with concatenate character
+     * this function update the tf of a term with concatenate character
      *
      * @param current   the term
      * @param character
@@ -786,10 +857,10 @@ public class Parser {
      */
     public void updateMaxTf(String current, String character, String docID, String date, String title) {
         if (maxTf.containsKey(docID)) {
-            maxTf.put(docID, Math.max(Integer.parseInt(termMap.get(new Token(current + character, docID, date, title.contains(current + character), rf.getSubFolder().get(0).getName())).get(docID).get(0)), maxTf.get(docID)));
+            maxTf.put(docID, Math.max(Integer.parseInt(termMap.get(new Token(current + character, docID, date, title.contains(current + character), fileName)).get(docID).get(0)), maxTf.get(docID)));
 
         } else {
-            maxTf.put(docID, Integer.parseInt(termMap.get(new Token(current + character, docID, date, title.contains(current + character), rf.getSubFolder().get(0).getName())).get(docID).get(0)));
+            maxTf.put(docID, Integer.parseInt(termMap.get(new Token(current + character, docID, date, title.contains(current + character), fileName)).get(docID).get(0)));
         }
     }
 
@@ -831,34 +902,62 @@ public class Parser {
             }
 
             if (tokens.size() > 0 && entity.split(" ").length < 5) {
-                if (entities.containsKey(entity.toUpperCase())) {
-
-                    if (entities.get(entity.toUpperCase()).containsKey(docID)) {
-                        entities.get(entity.toUpperCase()).get(docID).set(0, String.valueOf(Integer.parseInt(entities.get(entity.toUpperCase()).get(docID).get(0)) + 1));
-                    } else {
-                        entities.get(entity.toUpperCase()).put(docID, new ArrayList<String>(3));
-                        entities.get(entity.toUpperCase()).get(docID).add(0, "1");
-                        entities.get(entity.toUpperCase()).get(docID).add(1, String.valueOf(Boolean.compare(title.contains(entity), false)));
-                        entities.get(entity.toUpperCase()).get(docID).add(2, date);
-                    }
-                    if (this.indexer.getTermDictionary().containsKey(entity.toUpperCase())) {
-                        termMap.put(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName), entities.remove(entity.toUpperCase()));
-                    } else if (entities.get(entity.toUpperCase()).size() >= 2) {
-                        termMap.put(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName), entities.remove(entity.toUpperCase()));
-                    }
-                } else {
-                    if (entity.split("[-:, ]").length > 1) {
-                        entities.put(entity.toUpperCase(), new HashMap<String, ArrayList<String>>());
-                        entities.get(entity.toUpperCase()).put(docID, new ArrayList<String>(3));
-                        entities.get(entity.toUpperCase()).get(docID).add(0, "1");
-                        entities.get(entity.toUpperCase()).get(docID).add(1, String.valueOf(Boolean.compare(title.contains(entity), false)));
-                        entities.get(entity.toUpperCase()).get(docID).add(2, date);
-                    }
-                }
+                putTermEntity(entity,docID,date,title);//todo ido add
             }
         }
     }
 
+    //todo ido add!!!!!!!!!!!!!!!!!!1
+    private void putTermEntity(String entity,String docID,String date , String title) {
+        if (entities.containsKey(entity.toUpperCase())) {
+            if (entities.get(entity.toUpperCase()).containsKey(docID)) {
+                entities.get(entity.toUpperCase()).get(docID).set(0, String.valueOf(Integer.parseInt(entities.get(entity.toUpperCase()).get(docID).get(0)) + 1));
+
+            } else {
+                entities.get(entity.toUpperCase()).put(docID, new ArrayList<String>(3));
+                entities.get(entity.toUpperCase()).get(docID).add(0, "1");
+                entities.get(entity.toUpperCase()).get(docID).add(1, String.valueOf(Boolean.compare(title.contains(entity), false)));
+                entities.get(entity.toUpperCase()).get(docID).add(2, date);
+            }
+            if (this.indexer.getTermDictionary().containsKey(entity.toUpperCase())) {
+                String str = entities.get(entity.toUpperCase()).get(docID).get(0);
+                entitiesPerDoc.put(entity, Integer.parseInt(entities.get(entity).get(docID).get(0)));
+                termMap.put(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName), entities.remove(entity.toUpperCase()));
+
+            } else if (entities.get(entity.toUpperCase()).size() >= 2) {
+                String str =entities.get(entity.toUpperCase()).get(docID).get(0);
+                //String num =  Integer.valueOf(entities.get(entity).get(docID).get(0));
+                entitiesPerDoc.put(entity, Integer.parseInt(entities.get(entity).get(docID).get(0)));
+                termMap.put(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName), entities.remove(entity.toUpperCase()));
+            }
+        } else if(termMap.containsKey(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName))&&entity.split("[-:, ]").length > 1){
+            if (termMap.get(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName)).containsKey(docID)) {
+                termMap.get(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName)).get(docID).set(0, String.valueOf(Integer.parseInt(termMap.get(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName)).get(docID).get(0)) + 1));
+                int num = Integer.parseInt(termMap.get(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName)).get(docID).get(0));
+                entitiesPerDoc.put(entity, num);
+
+
+            } else {
+                termMap.get(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName)).put(docID, new ArrayList<String>(3));
+                termMap.get(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName)).get(docID).add(0, "1");
+                termMap.get(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName)).get(docID).add(1, String.valueOf(Boolean.compare(title.contains(entity), false)));
+                termMap.get(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName)).get(docID).add(2, date);
+                entitiesPerDoc.put(entity, 1);
+
+            }
+        }
+
+        else{
+            if (entity.split("[-:, ]").length > 1) {
+                entities.put(entity.toUpperCase(), new HashMap<String, ArrayList<String>>());
+                entities.get(entity.toUpperCase()).put(docID, new ArrayList<String>(3));
+                entities.get(entity.toUpperCase()).get(docID).add(0, "1");
+                entities.get(entity.toUpperCase()).get(docID).add(1, String.valueOf(Boolean.compare(title.contains(entity), false)));
+                entities.get(entity.toUpperCase()).get(docID).add(2, date);
+
+            }
+        }
+    }
     /**
      * this function assist the hendler function and hendle all of the token that represent a string term
      *
@@ -890,7 +989,7 @@ public class Parser {
                 num = Integer.parseInt(after);
                 if (months.containsKey(current)) {
                     if (num > 0 && num <= 31) {
-                        Token currTok = new Token(months.get(current) + "-" + after, docID, date, title.contains(months.get(current) + "-" + after), rf.getSubFolder().get(0).getName());
+                        Token currTok = new Token(months.get(current) + "-" + after, docID, date, title.contains(months.get(current) + "-" + after), fileName);
                         if (termMap.containsKey(currTok)) {
                             if (termMap.get(currTok).containsKey(docID)) {
                                 termMap.get(currTok).get(docID).set(0, String.valueOf(Integer.parseInt(termMap.get(currTok).get(docID).get(0)) + 1));
@@ -913,7 +1012,7 @@ public class Parser {
                         }
 
                     } else if (num > 1900 && isValidDate(after)) {
-                        Token currTok = new Token(after + "-" + months.get(current), docID, date, title.contains(after + "-" + months.get(current)), rf.getSubFolder().get(0).getName());
+                        Token currTok = new Token(after + "-" + months.get(current), docID, date, title.contains(after + "-" + months.get(current)), fileName);
                         if (months.containsKey(currTok)) {
                             if (termMap.get(currTok).containsKey(docID)) {
                                 termMap.get(currTok).get(docID).set(0, String.valueOf(Integer.parseInt(termMap.get(currTok).get(docID).get(0)) + 1));
@@ -962,19 +1061,18 @@ public class Parser {
 
             /***lower/upper**////
             if (Character.isUpperCase(current.charAt(0))) {
-                checkEntity(tokens, index, docID, date, title, rf.getSubFolder().get(0).getName());
-                Token currTok = new Token(current.toLowerCase(), docID, date, title.contains(current.toLowerCase()), rf.getSubFolder().get(0).getName());
+                checkEntity(tokens, index, docID, date, title, fileName);
+                Token currTok = new Token(current.toLowerCase(), docID, date, title.contains(current.toLowerCase()), fileName);
                 if (termMap.containsKey(currTok.getStr().toLowerCase())) {
                     putTermString(current.toLowerCase(), docID, stemming, date, title);
-                } else if (termMap.containsKey(new Token(current.toUpperCase(), docID, date, title.contains(current.toUpperCase()), rf.getSubFolder().get(0).getName()))) {
+                } else if (termMap.containsKey(new Token(current.toUpperCase(), docID, date, title.contains(current.toUpperCase()), fileName))) {
                     putTermString(current.toUpperCase(), docID, stemming, date, title);
                 } else {
                     putTermString(current.toUpperCase(), docID, stemming, date, title);
-                    return true;
                 }
             } else if (Character.isLowerCase(current.charAt(0))) {
-                if (termMap.containsKey(new Token(current.toUpperCase(), docID, date, title.contains(current.toUpperCase()), rf.getSubFolder().get(0).getName()))) {
-                    termMap.put(new Token(current.toLowerCase(), docID, date, title.contains(current.toLowerCase()), rf.getSubFolder().get(0).getName()), termMap.remove(new Token(current.toUpperCase(), docID, date, title.contains(current.toUpperCase()), rf.getSubFolder().get(0).getName()))); // remove uppercase key and update to lowercase key
+                if (termMap.containsKey(new Token(current.toUpperCase(), docID, date, title.contains(current.toUpperCase()), fileName))) {
+                    termMap.put(new Token(current.toLowerCase(), docID, date, title.contains(current.toLowerCase()), fileName), termMap.remove(new Token(current.toUpperCase(), docID, date, title.contains(current.toUpperCase()), fileName))); // remove uppercase key and update to lowercase key
                     putTermString(current.toLowerCase(), docID, stemming, date, title);
                     return true;
                 } else {
@@ -988,7 +1086,6 @@ public class Parser {
             }*/
         }
         if (stopwords.contains(current.toLowerCase())) {
-
             String newStopWord = current;
             boolean flag = false;
             boolean allStopwords = true;
@@ -1046,8 +1143,8 @@ public class Parser {
                         flag = true;
                     }
                 }
-                if (!newStopWord.equals(current) && !allStopwords) {
-                    putTermString(newStopWord, docID, stemming, date, title);
+                if (!newStopWord.equals(current) && !allStopwords&& tokens.size() > 0 && newStopWord.split(" ").length < 5) {
+                    putTermEntity(newStopWord,docID,date,title);
                     return true;
                 }
             }
@@ -1077,7 +1174,7 @@ public class Parser {
                 current = porter.getCurrent();
             }
         }
-        Token currTok = new Token(current, docID, date, title.contains(current), rf.getSubFolder().get(0).getName());
+        Token currTok = new Token(current, docID, date, title.contains(current), fileName);
         if (termMap.containsKey(currTok)) {
             if (termMap.get(currTok).containsKey(docID)) {
                 termMap.get(currTok).get(docID).set(0, String.valueOf(Integer.parseInt(termMap.get(currTok).get(docID).get(0)) + 1));
@@ -1184,6 +1281,11 @@ public class Parser {
      */
     public void setWordCounter(Map<String, Integer> wordCounter) {
         this.wordCounter = wordCounter;
+    }
+
+
+    public Map<String, Set<String>> getTopFiveEntitiesDocs() {
+        return topFiveEntitiesDocs;
     }
 
 
