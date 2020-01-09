@@ -82,7 +82,7 @@ public class ReadFile implements  Runnable{
              }
         }
         try {
-            Parser p = new Parser(stem,this,stopWordsPath,index);
+            Parser p = new Parser(stem,this,stopWordsPath,index,false);
                 p.parseDocs(splits);
         } catch (ParseException e) {
             e.printStackTrace();

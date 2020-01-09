@@ -5,7 +5,7 @@ import Model.Merge;
 import Model.ReadFile;
 
 import java.io.*;
-import java.rmi.server.ExportException;
+import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -70,7 +70,6 @@ public class viewModel {
         }
 
 
-
         Indexer index = new Indexer(stem, postPath);
 
         File file = new File( postPath + "/termDictionary.txt" );
@@ -102,6 +101,7 @@ public class viewModel {
 
     /**
      * this function deletes all files and directories in given directory/file
+     *
      * @param file the file in which we want to recursively delete all files and directories
      */
     public void delete(File file) {
@@ -153,19 +153,20 @@ public class viewModel {
      * @throws IOException
      */
 
-    public String displayDictionary(boolean selected, String postPath) throws IOException {
-        String dictionary = "";
+    public LinkedList displayDictionary(boolean selected, String postPath) throws IOException {
+        //String dictionary = "";
         Indexer index = new Indexer(selected, postPath);
         Set<String> termsKey = index.getTermDictionary().keySet();
+        LinkedList<String> dictionary = new LinkedList<>();
         if (termsKey.size() > 0) {
             for (String term : termsKey) {
                 String currTerm = term;
-                currTerm = "The TF for : " + currTerm + " -> " + index.getTermDictionary().get(term).get(index.getTermDictionary().get(term).keySet().toArray()[0]);
-                dictionary = dictionary + currTerm + "\n";
+                dictionary.add("The TF for : " + currTerm + " -> " + index.getTermDictionary().get(term).get(index.getTermDictionary().get(term).keySet().toArray()[0]));
+                //dictionary = dictionary + currTerm + "\n";
             }
             return dictionary;
         } else {
-            return "";
+            return null;
         }
     }
 
@@ -192,5 +193,15 @@ public class viewModel {
             }
         }
         index.setTermDictionary(termDictionary);
+    }
+
+    public void startQuery(String path, String stopWordsPath, boolean stem) throws IOException, ParseException, InterruptedException {
+        Searcher searcher = new Searcher(path, stopWordsPath, stem);
+        searcher.readQuery();
+    }
+
+    public void startSingleQuery(String query, String stopWordsPath, boolean stem) throws IOException, ParseException, InterruptedException {
+        Searcher searcher = new Searcher(query, stopWordsPath, stem);
+        searcher.startSingleQuery();
     }
 }
