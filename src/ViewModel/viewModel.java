@@ -186,10 +186,11 @@ public class viewModel {
         index.clearMap();
         while ((st = br.readLine()) != null) {
             String[] term = st.split(">");
-            if (term.length == 3) {
+            if (term.length == 4) {
                 termDictionary.put(term[0], new HashMap<>());
                 termDictionary.get(term[0]).put(term[1], new ArrayList<>());
-                termDictionary.get(term[0]).get(term[1]).set(0, Integer.parseInt(term[2]));
+                termDictionary.get(term[0]).get(term[1]).add(0, Integer.parseInt(term[2]));
+                termDictionary.get(term[0]).get(term[1]).add(1, Integer.parseInt(term[3]));
             }
         }
         index.setTermDictionary(termDictionary);
@@ -202,7 +203,7 @@ public class viewModel {
 
 
         for(Query query: queryList){
-            docsRanks.put(query.getNumOfQuery(),getAllRankedDocs(query.getTokenQuery,semanticSelected));
+            docsRanks.put(query.getNumOfQuery(),getAllRankedDocs(query.getTokenQuery(),semanticSelected));
         }
 
         return docsRanks;
@@ -210,9 +211,12 @@ public class viewModel {
 
     public Map<String,Map<String,Double>> startSingleQuery(String query, String stopWordsPath, boolean stem, boolean semanticSelected) throws IOException, ParseException, InterruptedException {
         Searcher searcher = new Searcher(query, stopWordsPath, stem);
-        Query query = searcher.startSingleQuery();
+        Query singleQuery = searcher.startSingleQuery();
 
-        return getAllRankedDocs(query.getTokenQuery,semanticSelected);
+        Map<String,Map<String,Double>> docsRanks = new HashMap<>();
+        docsRanks.put(singleQuery.getNumOfQuery(),getAllRankedDocs(singleQuery.getTokenQuery(),semanticSelected));
+
+        return docsRanks;
     }
 
 

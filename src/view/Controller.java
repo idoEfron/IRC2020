@@ -209,8 +209,8 @@ public class Controller implements Initializable {
             showAlert("please enter correct query");
             return;
         }
-        List<String> comoList = viewModel.startSingleQuery(query,txtBrowse.getText(),stemmerCheckB.isSelected(),semanticCheckB.isSelected());
-        comboBox.getItems().addAll(comoList);
+        viewModel.startSingleQuery(query,txtBrowse.getText(),stemmerCheckB.isSelected(),semanticCheckB.isSelected());
+        //comboBox.getItems().addAll(comoList);
     }
     /**
      * this is a controller function to show the dictionary in view panel
