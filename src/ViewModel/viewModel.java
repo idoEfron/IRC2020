@@ -4,7 +4,6 @@ import Model.*;
 import Model.Merge;
 import Model.ReadFile;
 import com.medallia.word2vec.Word2VecModel;
-import com.sun.java.util.jar.pack.ConstantPool;
 
 import java.io.*;
 import java.text.ParseException;
@@ -75,15 +74,16 @@ public class viewModel {
 
         Indexer index = new Indexer(stem, postPath);
 
-        File file = new File(postPath + "/termDictionary.txt");
+        File file = new File( postPath + "/termDictionary.txt" );
         file.createNewFile();
         FileWriter writer = new FileWriter(file);
-        for (Map.Entry<String, Map<String, ArrayList<Integer>>> records : Indexer.getTermDictionary().entrySet()) {
-            try {
+        for (Map.Entry<String,Map<String,ArrayList<Integer>>> records : Indexer.getTermDictionary().entrySet()) {
+            try{
                 Integer tf = (records.getValue().get(records.getValue().keySet().toArray()[0])).get(0);
                 Integer line = (records.getValue().get(records.getValue().keySet().toArray()[0])).get(1);
-                writer.write(records.getKey() + ">" + records.getValue().keySet().toArray()[0] + ">" + (records.getValue().get(records.getValue().keySet().toArray()[0])).get(0) + ">" + (records.getValue().get(records.getValue().keySet().toArray()[0])).get(1) + "\n");
-            } catch (Exception e) {
+                writer.write(records.getKey()+">"+records.getValue().keySet().toArray()[0]+">"+(records.getValue().get(records.getValue().keySet().toArray()[0])).get(0)+">"+(records.getValue().get(records.getValue().keySet().toArray()[0])).get(1)+"\n");
+            }
+            catch(Exception e){
                 System.out.println(records.getKey());
             }
         }
@@ -117,7 +117,6 @@ public class viewModel {
 
     /**
      * this function creates all needed folders of the program
-     *
      * @param postPath posting files path
      * @param folder   folder name depending on with stemming or without
      * @throws IOException
@@ -196,13 +195,14 @@ public class viewModel {
         index.setTermDictionary(termDictionary);
     }
 
-    public void startQuery(String path, String stopWordsPath, boolean stem) throws IOException, ParseException, InterruptedException {
+    public List<String> startQuery(String path, String stopWordsPath, boolean stem, boolean semanticSelected) throws IOException, ParseException, InterruptedException {
         Searcher searcher = new Searcher(path, stopWordsPath, stem);
         searcher.readQuery();
-
+        List<String>queryToRank = searcher.getQueriesTokens();
+        return queryToRank;//todo change to documents
     }
 
-    public void startSingleQuery(String query, String stopWordsPath, boolean stem) throws IOException, ParseException, InterruptedException {
+    public  List<String> startSingleQuery(String query, String stopWordsPath, boolean stem, boolean semanticSelected) throws IOException, ParseException, InterruptedException {
         Searcher searcher = new Searcher(query, stopWordsPath, stem);
         searcher.startSingleQuery();
 
@@ -212,7 +212,7 @@ public class viewModel {
         Set<String> retrievedDocs = new HashSet<>();
         Set<String> retrievedDocsWithSemantics = new HashSet<>();
         List<String> queryWithSemantic = new ArrayList<>();
-        if (semantic) {
+        if (semanticSelected) {
             for (String queryTerm : queryToRank) {
                 try {
                     Word2VecModel model = Word2VecModel.fromTextFile(new File("resources/word2vec.c.output.model.txt"));
@@ -239,8 +239,7 @@ public class viewModel {
         for (String queryTerm : queryToRank) {
             addDocstoRetrievedDocs(queryTerm,retrievedDocs);
         }
-
-
+        return null;//todo change
     }
 
     private void addDocstoRetrievedDocs(String term, Set<String> retrievedDocs) {

@@ -12,7 +12,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../medallia-word2vec-0.10.2-jar-with-dependencies.jar!/" />
+          <root url="jar://$MODULE_DIR$/resources/medallia-word2vec-0.10.2-jar-with-dependencies.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />

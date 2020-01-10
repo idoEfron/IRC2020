@@ -89,7 +89,7 @@ public class Searcher {
             ArrayList<String> temp = new ArrayList<>();
             temp.add(title);
             parser.parseDocs(temp);
-            //queriesTokens = parser.getQueryArray();
+            queriesTokens = parser.getQueryArray();
             query.setTokenQuery(parser.getQueryArray());
         }
     }
@@ -145,6 +145,7 @@ public class Searcher {
         temp.add(title);
         parser.parseDocs(temp);
         queryParse.setTokenQuery(parser.getQueryArray());
+        queriesTokens = parser.getQueryArray();
     }
 }
 

@@ -2,6 +2,7 @@
 
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.TextArea?>
@@ -87,7 +88,7 @@
                   </Pane>
                   <Pane layoutY="175.0" GridPane.columnIndex="3" GridPane.rowIndex="1">
                      <children>
-                        <Button fx:id="broesePosting" layoutY="13.0" mnemonicParsing="false" onAction="#BrowserButtonActionPosting" prefHeight="50.0" prefWidth="150.0" text="Browes" />
+                        <Button fx:id="broesePosting" layoutY="13.0" mnemonicParsing="false" onAction="#BrowserButtonActionPosting" prefHeight="50.0" prefWidth="150.0" text="Browse" />
                      </children>
                   </Pane>
                </children>
@@ -102,7 +103,7 @@
             <TextArea fx:id="txtQuery" layoutX="200.0" layoutY="175.0" prefHeight="50.0" prefWidth="300.0" />
             <TextArea fx:id="txtQueryPath" layoutX="200.0" layoutY="238.0" prefHeight="50.0" prefWidth="300.0" />
             <Button layoutX="510.0" layoutY="175.0" mnemonicParsing="false" onAction="#startSingleQuery" prefHeight="50.0" prefWidth="180.0" text="Run" />
-            <Button layoutX="510.0" layoutY="238.0" mnemonicParsing="false" onAction="#BrowserButtonActionQuery" prefHeight="50.0" prefWidth="180.0" text="Browes" />
+            <Button layoutX="510.0" layoutY="238.0" mnemonicParsing="false" onAction="#BrowserButtonActionQuery" prefHeight="50.0" prefWidth="180.0" text="Browse" />
             <Label layoutX="15.0" layoutY="175.0" prefHeight="50.0" prefWidth="176.0" text="Enter single query" textFill="#1b00ff">
                <font>
                   <Font name="System Bold Italic" size="18.0" />
@@ -125,14 +126,15 @@
                   <Font name="System Bold Italic" size="35.0" />
                </font>
             </Label>
-            <CheckBox layoutX="15.0" layoutY="400.0" mnemonicParsing="false" text="Enable semantic prossesing ">
+            <CheckBox fx:id="semanticCheckB" layoutX="15.0" layoutY="400.0" mnemonicParsing="false" text="Enable semantic prossesing ">
                <font>
                   <Font name="System Bold Italic" size="20.0" />
                </font>
             </CheckBox>
             <Button layoutX="510.0" layoutY="305.0" mnemonicParsing="false" onAction="#startQuery" prefHeight="50.0" prefWidth="180.0" text="Run queries file" />
             <Button layoutX="495.0" layoutY="370.0" mnemonicParsing="false" prefHeight="50.0" prefWidth="195.0" text="Display top five Entities" />
-            <Button layoutX="495.0" layoutY="435.0" mnemonicParsing="false" prefHeight="50.0" prefWidth="195.0" text="Save Reasult" />
+            <Button layoutX="495.0" layoutY="435.0" mnemonicParsing="false" prefHeight="50.0" prefWidth="195.0" text="Save Result" />
+            <ComboBox fx:id="comboBox" layoutX="339.0" layoutY="370.0" prefHeight="50.0" prefWidth="150.0" promptText="select document" />
          </children>
       </Pane>
    </right>
