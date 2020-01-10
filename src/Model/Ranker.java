@@ -75,7 +75,7 @@ public class Ranker {
 
     }
 
-    public List<String> getPostingLine(String term){
+    public static List<String> getPostingLine(String term){
         Pattern TAG_REGEX = Pattern.compile("<(.+?)>", Pattern.DOTALL);
         String posting ="";
         Map<String, Map<String, ArrayList<Integer>>> indexer = Indexer.getTermDictionary();

@@ -235,8 +235,12 @@ public class Indexer {
             bw = new BufferedWriter(filewriter);
             writer = new PrintWriter(bw);
 
-            // posting line format: maxTf,numOfUniqueWords,docLength
-            writer.print(p.getMaxTf().get(docID) + "," + p.getWordCounter().get(docID) + ","+p.getDocLength().get(docID));
+            String topFive ="";
+            for(String str: p.getTopFiveEntitiesDocs().get(docID)){
+                topFive = topFive+"," +str;
+            }
+            // posting line format: maxTf,numOfUniqueWords,docLength,topFiveWord
+            writer.print(p.getMaxTf().get(docID) + "," + p.getWordCounter().get(docID) + ","+p.getDocLength().get(docID) +topFive);
             writer.close();
         }
 
