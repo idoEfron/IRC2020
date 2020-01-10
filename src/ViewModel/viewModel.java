@@ -213,7 +213,7 @@ public class viewModel {
         Set<String> retrievedDocs = new HashSet<>();
         Set<String> retrievedDocsWithSemantics = new HashSet<>();
         List<String> queryWithSemantic = new ArrayList<>();
-        if (semantic) {
+        if (semanticSelected) {
             for (String queryTerm : queryToRank) {
                 try {
                     Word2VecModel model = Word2VecModel.fromTextFile(new File("resources/word2vec.c.output.model.txt"));
@@ -240,7 +240,7 @@ public class viewModel {
         for (String queryTerm : queryToRank) {
             addDocstoRetrievedDocs(queryTerm,retrievedDocs);
         }
-
+        return null;//todo change
     }
 
     private void addDocstoRetrievedDocs(String term, Set<String> retrievedDocs) {
