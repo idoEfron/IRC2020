@@ -18,6 +18,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
@@ -184,13 +185,64 @@ public class Controller implements Initializable {
             return;
         }
         String path = txtQueryPath.getText();
-        Map<String,Map<String,Double>> finalDocs = viewModel.startQuery(path,txtBrowse.getText(),stemmerCheckB.isSelected(),semanticCheckB.isSelected());
+        //Map<String,Map<String,Double>> finalDocs = viewModel.startQuery(path,txtBrowse.getText(),stemmerCheckB.isSelected(),semanticCheckB.isSelected());
+        List<String> outDisplay = viewModel.startQuery(path,txtBrowse.getText(),stemmerCheckB.isSelected(),semanticCheckB.isSelected());
+        if (outDisplay!=null &&outDisplay.size() > 0) {
+            ObservableList<String> observableList = FXCollections.observableList(outDisplay);
+            ListView listView = new ListView<>();
+            listView.setItems(observableList);
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("dictionary.fxml"));
+            Parent tableParent = (Parent) fxmlLoader.load();
+            Scene scene = new Scene(listView, 450, 400);
+            Stage stage = new Stage();
+            Stage window = new Stage();
+            window.setScene(scene);
+            stage.setTitle("queries");
+            window.show();
+            if(viewModel.getDocumentInQuery().size()>0&&viewModel.getDocumentInQuery()!=null){
+                comboBox.getItems().addAll(viewModel.getDocumentInQuery());
+            }
+        } else {
+            showAlert("There's nothing to display");
+        }
+    }
+    @FXML
+    public void displayTopFive() throws FileNotFoundException {
+        if(comboBox.getValue()!=null||comboBox.getValue().equals( "")){
+            String strComo = comboBox.getValue();
+            if(txtPosting.getText()==null||txtPosting.getText().equals("")){
+                showAlert("please enter posting path");
+            }else{
+                if(stemmerCheckB.isSelected()){
+                    String path = txtPosting.getText() + "/StemmedCorpus/Docs/"+ strComo+ ".txt";
+                    readDoc(strComo, path);
+                }else{
+                    String path = txtPosting.getText() + "/Corpus/Docs/"+ strComo+ ".txt";
+                    readDoc(strComo, path);
+                }
+            }
+        }
+    }
 
-
+    private void readDoc(String strComo, String stemmerPath) throws FileNotFoundException {
+        File topFiveStem = new File(stemmerPath);
+        if(topFiveStem.exists()){
+            Scanner sc = new Scanner(topFiveStem);
+            if(sc.hasNextLine()) {
+                String line = sc.nextLine();
+                String [] lineArr = line.split(",");
+                String out = "top entities for the document "+ strComo + " are:";
+                for(int i =3 ; i<lineArr.length;i++){
+                    out = out +" " +  lineArr[i] + "\n";
+                }
+                showAlert(out);
+            }
+        }
     }
 
     @FXML
     public void startSingleQuery() throws IOException, ParseException, InterruptedException {
+        List<String > outDisplay = new LinkedList<>();
         String query = txtQuery.getText();
         if(txtPosting.getText()==null){
             showAlert("no posting ");
@@ -209,7 +261,25 @@ public class Controller implements Initializable {
             showAlert("please enter correct query");
             return;
         }
-        viewModel.startSingleQuery(query,txtBrowse.getText(),stemmerCheckB.isSelected(),semanticCheckB.isSelected());
+        outDisplay = viewModel.startSingleQuery(query,txtBrowse.getText(),stemmerCheckB.isSelected(),semanticCheckB.isSelected());
+        if (outDisplay!=null &&outDisplay.size() > 0) {
+            ObservableList<String> observableList = FXCollections.observableList(outDisplay);
+            ListView listView = new ListView<>();
+            listView.setItems(observableList);
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("dictionary.fxml"));
+            Parent tableParent = (Parent) fxmlLoader.load();
+            Scene scene = new Scene(listView, 400, 400);
+            Stage stage = new Stage();
+            Stage window = new Stage();
+            window.setScene(scene);
+            stage.setTitle("queries");
+            window.show();
+            if(viewModel.getDocumentInQuery().size()>0&&viewModel.getDocumentInQuery()!=null){
+                comboBox.getItems().addAll(viewModel.getDocumentInQuery());
+            }
+        } else {
+            showAlert("There's nothing to display");
+        }
         //comboBox.getItems().addAll(comoList);
     }
     /**

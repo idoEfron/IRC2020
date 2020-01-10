@@ -132,7 +132,7 @@
                </font>
             </CheckBox>
             <Button layoutX="510.0" layoutY="305.0" mnemonicParsing="false" onAction="#startQuery" prefHeight="50.0" prefWidth="180.0" text="Run queries file" />
-            <Button layoutX="495.0" layoutY="370.0" mnemonicParsing="false" prefHeight="50.0" prefWidth="195.0" text="Display top five Entities" />
+            <Button layoutX="495.0" layoutY="370.0" mnemonicParsing="false" onAction="#displayTopFive" prefHeight="50.0" prefWidth="195.0" text="Display top five Entities" />
             <Button layoutX="495.0" layoutY="435.0" mnemonicParsing="false" prefHeight="50.0" prefWidth="195.0" text="Save Result" />
             <ComboBox fx:id="comboBox" layoutX="339.0" layoutY="370.0" prefHeight="50.0" prefWidth="150.0" promptText="select document" />
          </children>

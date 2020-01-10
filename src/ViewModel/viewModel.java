@@ -13,6 +13,11 @@ import java.util.concurrent.Executors;
 
 public class viewModel {
     private File subFolderTerms = null;
+    private List<String> documentInQuery;
+
+    public viewModel() {
+        documentInQuery = new LinkedList<>();
+    }
 
     /**
      * this function is the starting function of the program processes
@@ -152,7 +157,7 @@ public class viewModel {
      * @throws IOException
      */
 
-    public LinkedList displayDictionary(boolean selected, String postPath) throws IOException {
+    public LinkedList<String> displayDictionary(boolean selected, String postPath) throws IOException {
         //String dictionary = "";
         Indexer index = new Indexer(selected, postPath);
         Set<String> termsKey = index.getTermDictionary().keySet();
@@ -196,29 +201,51 @@ public class viewModel {
         index.setTermDictionary(termDictionary);
     }
 
-    public Map<String,Map<String,Double>> startQuery(String path, String stopWordsPath, boolean stem, boolean semanticSelected) throws IOException, ParseException, InterruptedException {
+    public LinkedList<String> startQuery(String path, String stopWordsPath, boolean stem, boolean semanticSelected) throws IOException, ParseException, InterruptedException {
         Searcher searcher = new Searcher(path, stopWordsPath, stem);
         List<Query> queryList = searcher.readQuery();
         Map<String,Map<String,Double>> docsRanks = new HashMap<>();
-
-
         for(Query query: queryList){
             docsRanks.put(query.getNumOfQuery(),getAllRankedDocs(query.getTokenQuery(),semanticSelected));
         }
-
-        return docsRanks;
+        return displayQueries(docsRanks);
     }
 
-    public Map<String,Map<String,Double>> startSingleQuery(String query, String stopWordsPath, boolean stem, boolean semanticSelected) throws IOException, ParseException, InterruptedException {
+    private LinkedList<String> displayQueries(Map<String, Map<String, Double>> docsRanks) {
+        LinkedList<String> display = new LinkedList<>();
+        int num = 0;
+        for (String s: docsRanks.keySet()) {
+            String str = "";
+            display.add("For query number " + s + " the most fifty or less documents are:"+"\n");
+            for (String docStr: docsRanks.get(s).keySet()) {
+                documentInQuery.add(docStr);
+                str = str + "," + docStr;
+                num++;
+                if(str.split(",").length%8==0){
+                    display.add(str);
+                    str = "";
+                }
+            }
+            display.add(str);
+        }
+        display.addFirst("Total number of queries are :" + docsRanks.keySet().size() +"\n"
+                +"Total document returned for all the queries are :" + num);
+        return display;
+    }
+
+    public LinkedList<String> startSingleQuery(String query, String stopWordsPath, boolean stem, boolean semanticSelected) throws IOException, ParseException, InterruptedException {
         Searcher searcher = new Searcher(query, stopWordsPath, stem);
         Query singleQuery = searcher.startSingleQuery();
 
         Map<String,Map<String,Double>> docsRanks = new HashMap<>();
         docsRanks.put(singleQuery.getNumOfQuery(),getAllRankedDocs(singleQuery.getTokenQuery(),semanticSelected));
 
-        return docsRanks;
+        return displayQueries(docsRanks);
     }
 
+    public List<String> getDocumentInQuery() {
+        return documentInQuery;
+    }
 
     private Map<String, Double> getAllRankedDocs(ArrayList<String> queriesTokens, boolean semanticSelected) {
         List<String> queryToRank = queriesTokens;
@@ -323,7 +350,7 @@ public class viewModel {
                 numberOfdocs++;
             }
             return topFifty;
-        }else if(docRanked.keySet().size()>0){
+        }else if(docRanked.keySet().size()>=0){
             return docRanked;
         }
         return null;

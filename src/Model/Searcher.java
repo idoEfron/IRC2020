@@ -42,7 +42,7 @@ public class Searcher {
                     while (line != null && !line.equals("</top>")) {
                         if (line.contains("<num>")) {
                             line = line.replaceAll("\\<.*?\\>", "");
-                            numOfQuery = line;
+                            numOfQuery = line.substring(line.indexOf(":")+1);
                         }
                         if (line.contains("<title>")) {
                             line = line.replaceAll("\\<.*?\\>", "");
@@ -107,7 +107,7 @@ public class Searcher {
                     while (line != null && !line.equals("</top>")) {
                         if (line.contains("<num>")) {
                             line = line.replaceAll("\\<.*?\\>", "");
-                            numOfQuery = line;
+                            numOfQuery = line.substring(line.indexOf(":")+1);
                         }
                         if (line.contains("<title>")) {
                             line = line.replaceAll("\\<.*?\\>", "");
