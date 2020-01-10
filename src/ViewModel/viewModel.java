@@ -296,5 +296,32 @@ public class viewModel {
         }
     }
 
-
+    private Map<String,Integer> topFifty(Map<String,Integer> docRanked){
+        //Map<String,Integer> topFifty = new HashMap<>();
+        if(docRanked.size()>50) {
+            int numberOfdocs = 0;
+            Map<String,Integer> topFifty = new HashMap<>();
+            while (numberOfdocs!=50) {
+                //int max = entitiesPerDoc.get(0);
+                Set<String> str = docRanked.keySet();
+                String [] strArr = new String[docRanked.keySet().size()];
+                strArr = str.toArray(strArr);
+                int max = docRanked.get(strArr[0]);
+                String maxString  =strArr[0];
+                for (int k = 1; k < strArr.length; k++) {
+                    if (docRanked.get(strArr[k])>max) {
+                        max = docRanked.get(strArr[k]);
+                        maxString = strArr[k];
+                    }
+                }
+                docRanked.remove(maxString);
+                topFifty.put(maxString,max);
+                numberOfdocs++;
+            }
+            return topFifty;
+        }else if(docRanked.keySet().size()>0){
+            return docRanked;
+        }
+        return null;
+    }
 }

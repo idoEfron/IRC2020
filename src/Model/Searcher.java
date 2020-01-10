@@ -1,7 +1,6 @@
 package Model;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.text.ParseException;
@@ -28,7 +27,7 @@ public class Searcher {
         return queriesTokens;
     }
 
-    public void readQuery() throws ParseException, InterruptedException, IOException {
+    public List<Query> readQuery() throws ParseException, InterruptedException, IOException {
         List<Query> listQueries = new ArrayList<>();
         BufferedReader reader;
         try {
@@ -92,8 +91,9 @@ public class Searcher {
             queriesTokens = parser.getQueryArray();
             query.setTokenQuery(parser.getQueryArray());
         }
+        return listQueries;
     }
-    public void startSingleQuery() throws ParseException, InterruptedException, IOException {
+    public Query startSingleQuery() throws ParseException, InterruptedException, IOException {
         String q = query;
         Query queryParse=null;
         Scanner scanner = new Scanner(query);
@@ -146,6 +146,7 @@ public class Searcher {
         parser.parseDocs(temp);
         queryParse.setTokenQuery(parser.getQueryArray());
         queriesTokens = parser.getQueryArray();
+        return queryParse;
     }
 }
 

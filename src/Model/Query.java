@@ -18,6 +18,10 @@ public class Query {
         this.tokenQuery = new ArrayList<>();
     }
 
+    public ArrayList<String> getTokenQuery() {
+        return tokenQuery;
+    }
+
     public void setTokenQuery(ArrayList<String> tokenQuery) {
         for (String str:tokenQuery)
         {
