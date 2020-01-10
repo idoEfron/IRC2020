@@ -241,7 +241,7 @@ public class viewModel {
         }
         return null;//todo change
     }
-
+   // private List<String>
     private void addDocstoRetrievedDocs(String term, Set<String> retrievedDocs) {
         List<String> postingLine = Ranker.getPostingLine(term);
         for (String str : postingLine) {
