@@ -170,7 +170,7 @@ public class Controller implements Initializable {
     }
     @FXML
     public void startQuery() throws IOException, ParseException, InterruptedException {
-        boolean semantic = semanticCheckB.isSelected();
+
         if(txtQueryPath.getText()==null||txtQueryPath.getText().equals("")){
             showAlert("please enter queries path");
             return;
@@ -184,7 +184,9 @@ public class Controller implements Initializable {
             return;
         }
         String path = txtQueryPath.getText();
-        viewModel.startQuery(path,txtBrowse.getText(),stemmerCheckB.isSelected(),semanticCheckB.isSelected());
+        Map<String,Map<String,Double>> finalDocs = viewModel.startQuery(path,txtBrowse.getText(),stemmerCheckB.isSelected(),semanticCheckB.isSelected());
+
+
     }
 
     @FXML
