@@ -3,6 +3,8 @@ package ViewModel;
 import Model.*;
 import Model.Merge;
 import Model.ReadFile;
+import com.medallia.word2vec.Word2VecModel;
+import com.sun.java.util.jar.pack.ConstantPool;
 
 import java.io.*;
 import java.text.ParseException;
@@ -15,8 +17,9 @@ public class viewModel {
 
     /**
      * this function is the starting function of the program processes
-     * @param stem if stemming is checked
-     * @param postPath  the posting files path
+     *
+     * @param stem       if stemming is checked
+     * @param postPath   the posting files path
      * @param corpusPath the corpus path
      * @return int array of the alert details
      * @throws IOException
@@ -29,9 +32,9 @@ public class viewModel {
         ExecutorService executor = Executors.newFixedThreadPool(4);
 
         if (stem) {
-            createFolders(postPath,"StemmedCorpus");
+            createFolders(postPath, "StemmedCorpus");
         } else {
-            createFolders(postPath,"Corpus");
+            createFolders(postPath, "Corpus");
         }
 
 
@@ -72,16 +75,15 @@ public class viewModel {
 
         Indexer index = new Indexer(stem, postPath);
 
-        File file = new File( postPath + "/termDictionary.txt" );
+        File file = new File(postPath + "/termDictionary.txt");
         file.createNewFile();
         FileWriter writer = new FileWriter(file);
-        for (Map.Entry<String,Map<String,ArrayList<Integer>>> records : Indexer.getTermDictionary().entrySet()) {
-            try{
+        for (Map.Entry<String, Map<String, ArrayList<Integer>>> records : Indexer.getTermDictionary().entrySet()) {
+            try {
                 Integer tf = (records.getValue().get(records.getValue().keySet().toArray()[0])).get(0);
                 Integer line = (records.getValue().get(records.getValue().keySet().toArray()[0])).get(1);
-                writer.write(records.getKey()+">"+records.getValue().keySet().toArray()[0]+">"+(records.getValue().get(records.getValue().keySet().toArray()[0])).get(0)+">"+(records.getValue().get(records.getValue().keySet().toArray()[0])).get(1)+"\n");
-            }
-            catch(Exception e){
+                writer.write(records.getKey() + ">" + records.getValue().keySet().toArray()[0] + ">" + (records.getValue().get(records.getValue().keySet().toArray()[0])).get(0) + ">" + (records.getValue().get(records.getValue().keySet().toArray()[0])).get(1) + "\n");
+            } catch (Exception e) {
                 System.out.println(records.getKey());
             }
         }
@@ -115,25 +117,26 @@ public class viewModel {
 
     /**
      * this function creates all needed folders of the program
+     *
      * @param postPath posting files path
-     * @param folder folder name depending on with stemming or without
+     * @param folder   folder name depending on with stemming or without
      * @throws IOException
      */
 
-    private void createFolders(String postPath,String folder) throws IOException {
-        File directory = new File(postPath + "/"+folder);
+    private void createFolders(String postPath, String folder) throws IOException {
+        File directory = new File(postPath + "/" + folder);
         directory.mkdir();
-        subFolderTerms = new File(postPath + "/"+folder+"/Terms");
+        subFolderTerms = new File(postPath + "/" + folder + "/Terms");
         subFolderTerms.mkdir();
-        File subFolderDocs = new File(postPath + "/"+folder+"/Docs");
+        File subFolderDocs = new File(postPath + "/" + folder + "/Docs");
         subFolderDocs.mkdir();
         for (char i = 'a'; i <= 'z'; i++) {
-            File Tfolder = new File(postPath + "/"+folder+"/Terms/" + i);
+            File Tfolder = new File(postPath + "/" + folder + "/Terms/" + i);
             Tfolder.mkdir();
             File merged = new File(subFolderTerms.getPath() + "/" + i, i + "_merged.txt");
             merged.createNewFile();
         }
-        File Sfolder = new File(subFolderTerms.getPath()+"/special");
+        File Sfolder = new File(subFolderTerms.getPath() + "/special");
         Sfolder.mkdir();
         File merged = new File(subFolderTerms.getPath() + "/special", "special" + "_merged.txt");
         merged.createNewFile();
@@ -143,8 +146,9 @@ public class viewModel {
 
     /**
      * this function display the dictionary generated from the program
+     *
      * @param selected stemming selected/not selected
-     * @param postPath  posting files path
+     * @param postPath posting files path
      * @return the String to be displayed
      * @throws IOException
      */
@@ -168,6 +172,7 @@ public class viewModel {
 
     /**
      * this function loads dictionary from the hard disk to RAM
+     *
      * @param selected stemming selected/not selected
      * @param postPath posting file path
      * @throws IOException
@@ -182,10 +187,10 @@ public class viewModel {
         index.clearMap();
         while ((st = br.readLine()) != null) {
             String[] term = st.split(">");
-            if(term.length==3) {
+            if (term.length == 3) {
                 termDictionary.put(term[0], new HashMap<>());
                 termDictionary.get(term[0]).put(term[1], new ArrayList<>());
-                termDictionary.get(term[0]).get(term[1]).set(0,Integer.parseInt(term[2]));
+                termDictionary.get(term[0]).get(term[1]).set(0, Integer.parseInt(term[2]));
             }
         }
         index.setTermDictionary(termDictionary);
@@ -202,8 +207,46 @@ public class viewModel {
         searcher.startSingleQuery();
 
         List<String> queryToRank = searcher.getQueriesTokens();
-        queryToRank.retainAll(Indexer.getTermDictionary().keySet());
+        Set indexedTerms = Indexer.getTermDictionary().keySet();
+        queryToRank.retainAll(indexedTerms);
+        Set<String> retrievedDocs = new HashSet<>();
+        Set<String> retrievedDocsWithSemantics = new HashSet<>();
+        List<String> queryWithSemantic = new ArrayList<>();
+        if (semantic) {
+            for (String queryTerm : queryToRank) {
+                try {
+                    Word2VecModel model = Word2VecModel.fromTextFile(new File("resources/word2vec.c.output.model.txt"));
+                    com.medallia.word2vec.Searcher semanticSearcher = model.forSearch();
 
+                    int numOfResults = 20;
 
+                    List<com.medallia.word2vec.Searcher.Match> matches = semanticSearcher.getMatches(queryTerm, numOfResults);
+                    for (com.medallia.word2vec.Searcher.Match match : matches) {
+                        String sematicTerm =match.match();
+                        if(indexedTerms.contains(sematicTerm)){
+                            queryWithSemantic.add(match.match());
+                            addDocstoRetrievedDocs(sematicTerm,retrievedDocsWithSemantics);
+                        }
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (com.medallia.word2vec.Searcher.UnknownWordException e) {
+                    // TERM NOT KNOWN TO MODEL
+                }
+            }
+        }
+
+        for (String queryTerm : queryToRank) {
+            addDocstoRetrievedDocs(queryTerm,retrievedDocs);
+        }
+
+    }
+
+    private void addDocstoRetrievedDocs(String term, Set<String> retrievedDocs) {
+        List<String> postingLine = Ranker.getPostingLine(term);
+        for (String str : postingLine) {
+            String[] termInfo = str.split("\\|");
+            retrievedDocs.add(termInfo[0]);
+        }
     }
 }

@@ -29,7 +29,7 @@ public class Parser {
     private boolean isQuery;
     private String fileName;
     private String filePath;
-    private Map<String , Integer> entitiesPerDoc
+    private Map<String , Integer> entitiesPerDoc;
     private Map<String, Set<String>> topFiveEntitiesDocs;
     private Map<String,Integer> docLength;
 
@@ -911,20 +911,20 @@ public class Parser {
             }
             if (this.indexer.getTermDictionary().containsKey(entity.toUpperCase())) {
                 String str = entities.get(entity.toUpperCase()).get(docID).get(0);
-                entitiesPerDoc.put(entity, Integer.parseInt(entities.get(entity).get(docID).get(0)));
+                entitiesPerDoc.put(entity.toUpperCase(), Integer.parseInt(entities.get(entity).get(docID).get(0)));
                 termMap.put(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName), entities.remove(entity.toUpperCase()));
 
             } else if (entities.get(entity.toUpperCase()).size() >= 2) {
                 String str =entities.get(entity.toUpperCase()).get(docID).get(0);
                 //String num =  Integer.valueOf(entities.get(entity).get(docID).get(0));
-                entitiesPerDoc.put(entity, Integer.parseInt(entities.get(entity).get(docID).get(0)));
+                entitiesPerDoc.put(entity.toUpperCase(), Integer.parseInt(entities.get(entity.toUpperCase()).get(docID).get(0)));
                 termMap.put(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName), entities.remove(entity.toUpperCase()));
             }
         } else if(termMap.containsKey(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName))&&entity.split("[-:, ]").length > 1){
             if (termMap.get(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName)).containsKey(docID)) {
                 termMap.get(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName)).get(docID).set(0, String.valueOf(Integer.parseInt(termMap.get(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName)).get(docID).get(0)) + 1));
                 int num = Integer.parseInt(termMap.get(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName)).get(docID).get(0));
-                entitiesPerDoc.put(entity, num);
+                entitiesPerDoc.put(entity.toUpperCase(), num);
 
 
             } else {
@@ -932,7 +932,7 @@ public class Parser {
                 termMap.get(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName)).get(docID).add(0, "1");
                 termMap.get(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName)).get(docID).add(1, String.valueOf(Boolean.compare(title.contains(entity), false)));
                 termMap.get(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName)).get(docID).add(2, date);
-                entitiesPerDoc.put(entity, 1);
+                entitiesPerDoc.put(entity.toUpperCase(), 1);
 
             }
         }
