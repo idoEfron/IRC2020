@@ -31,7 +31,7 @@ public class Ranker {
         }
     }
 
-    public double score(Set<String> query,String doc){
+    public double score(List<String> query,String doc){
 
         double totalScore =0;
         int numberOfDocs = ReadFile.getDocs();

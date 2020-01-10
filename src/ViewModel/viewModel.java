@@ -195,51 +195,91 @@ public class viewModel {
         index.setTermDictionary(termDictionary);
     }
 
-    public List<String> startQuery(String path, String stopWordsPath, boolean stem, boolean semanticSelected) throws IOException, ParseException, InterruptedException {
+    public Map<String,Double> startQuery(String path, String stopWordsPath, boolean stem, boolean semanticSelected) throws IOException, ParseException, InterruptedException {
         Searcher searcher = new Searcher(path, stopWordsPath, stem);
         searcher.readQuery();
-        List<String>queryToRank = searcher.getQueriesTokens();
-        return queryToRank;//todo change to documents
+
+        return getAllRankedDocs(searcher.getQueriesTokens(),semanticSelected);
     }
 
-    public  List<String> startSingleQuery(String query, String stopWordsPath, boolean stem, boolean semanticSelected) throws IOException, ParseException, InterruptedException {
+    public Map<String,Double> startSingleQuery(String query, String stopWordsPath, boolean stem, boolean semanticSelected) throws IOException, ParseException, InterruptedException {
         Searcher searcher = new Searcher(query, stopWordsPath, stem);
         searcher.startSingleQuery();
 
-        List<String> queryToRank = searcher.getQueriesTokens();
+        return getAllRankedDocs(searcher.getQueriesTokens(),semanticSelected);
+    }
+
+
+    private Map<String, Double> getAllRankedDocs(ArrayList<String> queriesTokens, boolean semanticSelected) {
+        List<String> queryToRank = queriesTokens;
+        List<String> queryWithSemantic = new ArrayList<>();
+
+        //intersaction with terms of inverted index
         Set indexedTerms = Indexer.getTermDictionary().keySet();
         queryToRank.retainAll(indexedTerms);
-        Set<String> retrievedDocs = new HashSet<>();
+
         Set<String> retrievedDocsWithSemantics = new HashSet<>();
-        List<String> queryWithSemantic = new ArrayList<>();
-        if (semanticSelected) {
-            for (String queryTerm : queryToRank) {
-                try {
-                    Word2VecModel model = Word2VecModel.fromTextFile(new File("resources/word2vec.c.output.model.txt"));
-                    com.medallia.word2vec.Searcher semanticSearcher = model.forSearch();
+        Set<String> retrievedDocs = new HashSet<>();
 
-                    int numOfResults = 20;
-
-                    List<com.medallia.word2vec.Searcher.Match> matches = semanticSearcher.getMatches(queryTerm, numOfResults);
-                    for (com.medallia.word2vec.Searcher.Match match : matches) {
-                        String sematicTerm =match.match();
-                        if(indexedTerms.contains(sematicTerm)){
-                            queryWithSemantic.add(match.match());
-                            addDocstoRetrievedDocs(sematicTerm,retrievedDocsWithSemantics);
-                        }
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (com.medallia.word2vec.Searcher.UnknownWordException e) {
-                    // TERM NOT KNOWN TO MODEL
-                }
-            }
+        if(semanticSelected){
+            getRelevantDocsWithSemantics(queryToRank,retrievedDocsWithSemantics,queryWithSemantic,indexedTerms);
         }
+
+        getRelevantDocs(queryToRank,retrievedDocs);
+
+        Map<String,Double> docsRanks = rankDocs(retrievedDocs,retrievedDocsWithSemantics,queryToRank,queryWithSemantic);
+        return docsRanks;
+    }
+
+    private void getRelevantDocs(List<String> queryToRank, Set<String> retrievedDocs) {
 
         for (String queryTerm : queryToRank) {
             addDocstoRetrievedDocs(queryTerm,retrievedDocs);
         }
-        return null;//todo change
+    }
+
+    private void getRelevantDocsWithSemantics(List<String> queryToRank, Set<String> retrievedDocsWithSemantics, List<String> queryWithSemantic, Set indexedTerms) {
+        for (String queryTerm : queryToRank) {
+            try {
+                Word2VecModel model = Word2VecModel.fromTextFile(new File("resources/word2vec.c.output.model.txt"));
+                com.medallia.word2vec.Searcher semanticSearcher = model.forSearch();
+
+                int numOfResults = 20;
+
+                List<com.medallia.word2vec.Searcher.Match> matches = semanticSearcher.getMatches(queryTerm, numOfResults);
+                for (com.medallia.word2vec.Searcher.Match match : matches) {
+                    String sematicTerm =match.match();
+                    if(indexedTerms.contains(sematicTerm)){
+                        queryWithSemantic.add(match.match());
+                        addDocstoRetrievedDocs(sematicTerm,retrievedDocsWithSemantics);
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (com.medallia.word2vec.Searcher.UnknownWordException e) {
+                // TERM NOT KNOWN TO MODEL
+            }
+        }
+    }
+
+    private Map<String, Double> rankDocs(Set<String> retrievedDocs, Set<String> retrievedDocsWithSemantics, List<String> queryToRank, List<String> queryWithSemantic) {
+        Ranker ranker = new Ranker();
+        Map<String,Double> docsRanks = new HashMap<>();
+        for(String doc: retrievedDocs){
+            docsRanks.put(doc,ranker.score(queryToRank,doc));
+        }
+        for(String doc: retrievedDocsWithSemantics){
+            if(docsRanks.containsKey(doc)){
+                double originalRank = docsRanks.remove(doc);
+                double newRank = 0.8*originalRank +0.2*ranker.score(queryWithSemantic,doc);
+                docsRanks.put(doc,newRank);
+            }
+            else{
+                docsRanks.put(doc,ranker.score(queryToRank,doc));
+            }
+        }
+
+        return docsRanks;
     }
 
     private void addDocstoRetrievedDocs(String term, Set<String> retrievedDocs) {
@@ -249,4 +289,6 @@ public class viewModel {
             retrievedDocs.add(termInfo[0]);
         }
     }
+
+
 }
