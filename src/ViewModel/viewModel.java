@@ -217,9 +217,7 @@ public class viewModel {
                 try {
                     Word2VecModel model = Word2VecModel.fromTextFile(new File("resources/word2vec.c.output.model.txt"));
                     com.medallia.word2vec.Searcher semanticSearcher = model.forSearch();
-
                     int numOfResults = 20;
-
                     List<com.medallia.word2vec.Searcher.Match> matches = semanticSearcher.getMatches(queryTerm, numOfResults);
                     for (com.medallia.word2vec.Searcher.Match match : matches) {
                         String sematicTerm =match.match();
@@ -241,7 +239,34 @@ public class viewModel {
         }
         return null;//todo change
     }
-   // private List<String>
+    private Map<String,Integer> topFifty(Map<String,Integer> docRanked){
+        //Map<String,Integer> topFifty = new HashMap<>();
+        if(docRanked.size()>50) {
+            int numberOfdocs = 0;
+            Map<String,Integer> topFifty = new HashMap<>();
+            while (numberOfdocs!=50) {
+                //int max = entitiesPerDoc.get(0);
+                Set<String> str = docRanked.keySet();
+                String [] strArr = new String[docRanked.keySet().size()];
+                strArr = str.toArray(strArr);
+                int max = docRanked.get(strArr[0]);
+                String maxString  =strArr[0];
+                for (int k = 1; k < strArr.length; k++) {
+                    if (docRanked.get(strArr[k])>max) {
+                        max = docRanked.get(strArr[k]);
+                        maxString = strArr[k];
+                    }
+                }
+                docRanked.remove(maxString);
+                topFifty.put(maxString,max);
+                numberOfdocs++;
+            }
+            return topFifty;
+        }else if(docRanked.keySet().size()>0){
+            return docRanked;
+        }
+        return null;
+    }
     private void addDocstoRetrievedDocs(String term, Set<String> retrievedDocs) {
         List<String> postingLine = Ranker.getPostingLine(term);
         for (String str : postingLine) {
