@@ -191,19 +191,21 @@ public class viewModel {
         index.setTermDictionary(termDictionary);
     }
 
-    public void startQuery(String path, String stopWordsPath, boolean stem) throws IOException, ParseException, InterruptedException {
+    public List<String> startQuery(String path, String stopWordsPath, boolean stem, boolean semanticSelected) throws IOException, ParseException, InterruptedException {
         Searcher searcher = new Searcher(path, stopWordsPath, stem);
         searcher.readQuery();
-
+        List<String>queryToRank = searcher.getQueriesTokens();
+        return queryToRank;//todo change to documents
     }
 
-    public void startSingleQuery(String query, String stopWordsPath, boolean stem) throws IOException, ParseException, InterruptedException {
+    public  List<String> startSingleQuery(String query, String stopWordsPath, boolean stem, boolean semanticSelected) throws IOException, ParseException, InterruptedException {
         Searcher searcher = new Searcher(query, stopWordsPath, stem);
         searcher.startSingleQuery();
 
         List<String> queryToRank = searcher.getQueriesTokens();
-        queryToRank.retainAll(Indexer.getTermDictionary().keySet());
 
-
+        //todo add loop to retrieve all relevant documents
+       // queryToRank.retainAll(Indexer.getTermDictionary().keySet());
+        return queryToRank;//todo change to documents
     }
 }

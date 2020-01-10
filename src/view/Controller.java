@@ -9,12 +9,10 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ListView;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TextArea;
+import javafx.scene.control.*;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -22,13 +20,14 @@ import javafx.stage.Stage;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URL;
 import java.text.ParseException;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class Controller {
+public class Controller implements Initializable {
     private viewModel viewModel = new viewModel();
     private String postPath = "";
     @FXML
@@ -45,7 +44,11 @@ public class Controller {
     private javafx.scene.control.CheckBox stemmerCheckB;
     @FXML
     private TextArea txtQueryPath;
-
+    @FXML
+    private ComboBox<String> comboBox;
+    private ObservableList<String> list = FXCollections.observableArrayList();
+    @FXML
+    private javafx.scene.control.CheckBox semanticCheckB;
     /**
      * this function start the program via the view panel
      *
@@ -167,6 +170,7 @@ public class Controller {
     }
     @FXML
     public void startQuery() throws IOException, ParseException, InterruptedException {
+        boolean semantic = semanticCheckB.isSelected();
         if(txtQueryPath.getText()==null||txtQueryPath.getText().equals("")){
             showAlert("please enter queries path");
             return;
@@ -180,7 +184,7 @@ public class Controller {
             return;
         }
         String path = txtQueryPath.getText();
-        viewModel.startQuery(path,txtBrowse.getText(),stemmerCheckB.isSelected());
+        viewModel.startQuery(path,txtBrowse.getText(),stemmerCheckB.isSelected(),semanticCheckB.isSelected());
     }
 
     @FXML
@@ -203,8 +207,8 @@ public class Controller {
             showAlert("please enter correct query");
             return;
         }
-        viewModel.startSingleQuery(query,txtBrowse.getText(),stemmerCheckB.isSelected());
-
+        List<String> comoList = viewModel.startSingleQuery(query,txtBrowse.getText(),stemmerCheckB.isSelected(),semanticCheckB.isSelected());
+        comboBox.getItems().addAll(comoList);
     }
     /**
      * this is a controller function to show the dictionary in view panel
@@ -257,5 +261,10 @@ public class Controller {
             showAlert("saving completed!");
 
         }
+    }
+
+    @Override
+    public void initialize(URL location, ResourceBundle resources) {
+    comboBox.setItems(list);
     }
 }

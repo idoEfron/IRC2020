@@ -29,7 +29,7 @@ public class Parser {
     private boolean isQuery;
     private String fileName;
     private String filePath;
-    private Map<String , Integer> entitiesPerDoc
+    private Map<String , Integer> entitiesPerDoc;
     private Map<String, Set<String>> topFiveEntitiesDocs;
     private Map<String,Integer> docLength;
 
@@ -1277,7 +1277,11 @@ public class Parser {
 
     public Map<String, Set<String>> getTopFiveEntitiesDocs() {
         return topFiveEntitiesDocs;
+
     }
+
+
+
 
 
 }
