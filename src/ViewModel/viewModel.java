@@ -240,6 +240,7 @@ public class viewModel {
             addDocstoRetrievedDocs(queryTerm,retrievedDocs);
         }
 
+
     }
 
     private void addDocstoRetrievedDocs(String term, Set<String> retrievedDocs) {
