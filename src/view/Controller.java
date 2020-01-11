@@ -50,6 +50,8 @@ public class Controller implements Initializable {
     private ObservableList<String> list = FXCollections.observableArrayList();
     @FXML
     private javafx.scene.control.CheckBox semanticCheckB;
+    @FXML
+    javafx.scene.control.CheckBox descripChoice;
     /**
      * this function start the program via the view panel
      *
@@ -186,7 +188,7 @@ public class Controller implements Initializable {
         }
         String path = txtQueryPath.getText();
         //Map<String,Map<String,Double>> finalDocs = viewModel.startQuery(path,txtBrowse.getText(),stemmerCheckB.isSelected(),semanticCheckB.isSelected());
-        List<String> outDisplay = viewModel.startQuery(path,txtBrowse.getText(),stemmerCheckB.isSelected(),semanticCheckB.isSelected());
+        List<String> outDisplay = viewModel.startQuery(path,txtBrowse.getText(),stemmerCheckB.isSelected(),semanticCheckB.isSelected(),descripChoice.isSelected());
         if (outDisplay!=null &&outDisplay.size() > 0) {
             ObservableList<String> observableList = FXCollections.observableList(outDisplay);
             ListView listView = new ListView<>();
@@ -261,7 +263,7 @@ public class Controller implements Initializable {
             showAlert("please enter correct query");
             return;
         }
-        outDisplay = viewModel.startSingleQuery(query,txtBrowse.getText(),stemmerCheckB.isSelected(),semanticCheckB.isSelected());
+        outDisplay = viewModel.startSingleQuery(query,txtBrowse.getText(),stemmerCheckB.isSelected(),semanticCheckB.isSelected(),descripChoice.isSelected());
         if (outDisplay!=null &&outDisplay.size() > 0) {
             ObservableList<String> observableList = FXCollections.observableList(outDisplay);
             ListView listView = new ListView<>();

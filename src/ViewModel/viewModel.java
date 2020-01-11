@@ -4,6 +4,7 @@ import Model.*;
 import Model.Merge;
 import Model.ReadFile;
 import com.medallia.word2vec.Word2VecModel;
+import view.snowball.ext.porterStemmer;
 
 import java.io.*;
 import java.text.ParseException;
@@ -14,6 +15,7 @@ import java.util.concurrent.Executors;
 public class viewModel {
     private File subFolderTerms = null;
     private List<String> documentInQuery;
+    private String postPath;
 
     public viewModel() {
         documentInQuery = new LinkedList<>();
@@ -31,6 +33,11 @@ public class viewModel {
 
     public int[] start(boolean stem, String postPath, String corpusPath) throws IOException {
 
+        this.postPath = postPath;
+        ReadFile.setDocs(0);
+        Indexer.getTermDictionary().clear();
+        Indexer.getDocDictionary().clear();
+        Indexer.setTotalDocLength(0);
         File[] files1 = null;
         File folder = new File(corpusPath);
         ExecutorService executor = Executors.newFixedThreadPool(4);
@@ -98,7 +105,7 @@ public class viewModel {
         int[] corpusInfo = new int[2];
         corpusInfo[0] = index.getNumberOfTerms();
         corpusInfo[1] = ReadFile.getDocs();
-        ReadFile.setDocs(0);
+
         return corpusInfo;
     }
 
@@ -201,13 +208,16 @@ public class viewModel {
         index.setTermDictionary(termDictionary);
     }
 
-    public LinkedList<String> startQuery(String path, String stopWordsPath, boolean stem, boolean semanticSelected) throws IOException, ParseException, InterruptedException {
-        Searcher searcher = new Searcher(path, stopWordsPath, stem);
+    public LinkedList<String> startQuery(String path, String stopWordsPath, boolean stem, boolean semanticSelected,boolean isDescription) throws IOException, ParseException, InterruptedException {
+        Searcher searcher = new Searcher(path, stopWordsPath, stem,isDescription);
         List<Query> queryList = searcher.readQuery();
         Map<String,Map<String,Double>> docsRanks = new HashMap<>();
         for(Query query: queryList){
-            docsRanks.put(query.getNumOfQuery(),getAllRankedDocs(query.getTokenQuery(),semanticSelected));
+            docsRanks.put(query.getNumOfQuery(),getAllRankedDocs(query,semanticSelected, stem, isDescription));
         }
+
+        writeToResultFile(docsRanks);
+
         return displayQueries(docsRanks);
     }
 
@@ -217,11 +227,11 @@ public class viewModel {
         for (String s: docsRanks.keySet()) {
             String str = "";
             display.add("For query number " + s + " the most fifty or less documents are:"+"\n");
-            for (String docStr: docsRanks.get(s).keySet()) {
+            for (String docStr: topFifty(docsRanks.get(s)).keySet()) {
                 documentInQuery.add(docStr);
                 str = str + "," + docStr;
                 num++;
-                if(str.split(",").length%8==0){
+                if(str.split(",").length%10==0){
                     display.add(str);
                     str = "";
                 }
@@ -233,39 +243,76 @@ public class viewModel {
         return display;
     }
 
-    public LinkedList<String> startSingleQuery(String query, String stopWordsPath, boolean stem, boolean semanticSelected) throws IOException, ParseException, InterruptedException {
-        Searcher searcher = new Searcher(query, stopWordsPath, stem);
+    public LinkedList<String> startSingleQuery(String query, String stopWordsPath, boolean stem, boolean semanticSelected,boolean isDescription) throws IOException, ParseException, InterruptedException {
+        Searcher searcher = new Searcher(query, stopWordsPath, stem,isDescription);
         Query singleQuery = searcher.startSingleQuery();
 
         Map<String,Map<String,Double>> docsRanks = new HashMap<>();
-        docsRanks.put(singleQuery.getNumOfQuery(),getAllRankedDocs(singleQuery.getTokenQuery(),semanticSelected));
+        docsRanks.put(singleQuery.getNumOfQuery(),getAllRankedDocs(singleQuery,semanticSelected,stem,isDescription));
+
+        writeToResultFile(docsRanks);
 
         return displayQueries(docsRanks);
+    }
+
+    private void writeToResultFile(Map<String, Map<String, Double>> docsRanks) throws IOException {
+
+        File file = new File( postPath + "/results.txt" );
+        file.createNewFile();
+        FileWriter writer = new FileWriter(file);
+        for(Map.Entry<String, Map<String, Double>> entry: docsRanks.entrySet()){
+            for(Map.Entry<String, Double> docEntry: entry.getValue().entrySet()){
+                writer.write(entry.getKey() + " " + "0"+ " " +docEntry.getKey() +" "+docEntry.getValue() +" "+ "42.38" + " " + "i&i"+'\n');
+            }
+        }
+        writer.flush();
+        writer.close();
     }
 
     public List<String> getDocumentInQuery() {
         return documentInQuery;
     }
 
-    private Map<String, Double> getAllRankedDocs(ArrayList<String> queriesTokens, boolean semanticSelected) {
-        List<String> queryToRank = queriesTokens;
+    private Map<String, Double> getAllRankedDocs(Query queriesTokens, boolean semanticSelected, boolean stem, boolean isDescription) throws IOException {
         List<String> queryWithSemantic = new ArrayList<>();
 
         //intersaction with terms of inverted index
         Set indexedTerms = Indexer.getTermDictionary().keySet();
-        queryToRank.retainAll(indexedTerms);
+        //todo change to end of semantic query ;
 
-        Set<String> retrievedDocsWithSemantics = new HashSet<>();
         Set<String> retrievedDocs = new HashSet<>();
 
-        if(semanticSelected){
-            getRelevantDocsWithSemantics(queryToRank,retrievedDocsWithSemantics,queryWithSemantic,indexedTerms);
+        Map<String,Double> docsRanks = new HashMap<>();
+
+        try{
+            Word2VecModel model = Word2VecModel.fromTextFile(new File("resources/word2vec.c.output.model.txt"));
+            com.medallia.word2vec.Searcher semanticSearcher = model.forSearch();
+
+            int numOfResults = 10;
+
+            if(semanticSelected){
+                getRelevantDocsWithSemantics(queriesTokens,queryWithSemantic,indexedTerms,semanticSearcher,numOfResults,stem,isDescription);
+            }
+
+            List<String> queryToRank = queriesTokens.getTokenQuery();
+            if(stem){
+                List<String> stemmedQuery = new ArrayList<>();
+                for(String term: queryToRank){
+                    stemmedQuery.add(stemTerm(term));
+                }
+                queryToRank = stemmedQuery;
+            }
+            getRelevantDocs(queryToRank,retrievedDocs);
+            queryToRank.retainAll(indexedTerms);
+            queryWithSemantic.retainAll(indexedTerms);
+
+            docsRanks = rankDocs(retrievedDocs,queryToRank,queryWithSemantic);
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-
-        getRelevantDocs(queryToRank,retrievedDocs);
-
-        Map<String,Double> docsRanks = rankDocs(retrievedDocs,retrievedDocsWithSemantics,queryToRank,queryWithSemantic);
         return docsRanks;
+
     }
 
     private void getRelevantDocs(List<String> queryToRank, Set<String> retrievedDocs) {
@@ -275,45 +322,62 @@ public class viewModel {
         }
     }
 
-    private void getRelevantDocsWithSemantics(List<String> queryToRank, Set<String> retrievedDocsWithSemantics, List<String> queryWithSemantic, Set indexedTerms) {
-        for (String queryTerm : queryToRank) {
+    private void getRelevantDocsWithSemantics(Query queryToRank, List<String> queryWithSemantic, Set indexedTerms, com.medallia.word2vec.Searcher semanticSearcher, int numOfResults, boolean stem, boolean isDescription) {
+        for (String queryTerm : queryToRank.getTokenQuery()) {
             try {
-                Word2VecModel model = Word2VecModel.fromTextFile(new File("resources/word2vec.c.output.model.txt"));
-                com.medallia.word2vec.Searcher semanticSearcher = model.forSearch();
-
-                int numOfResults = 20;
 
                 List<com.medallia.word2vec.Searcher.Match> matches = semanticSearcher.getMatches(queryTerm, numOfResults);
                 for (com.medallia.word2vec.Searcher.Match match : matches) {
-                    String sematicTerm =match.match();
-                    if(indexedTerms.contains(sematicTerm)){
-                        queryWithSemantic.add(match.match());
-                        addDocstoRetrievedDocs(sematicTerm,retrievedDocsWithSemantics);
+
+                    String semanticTerm =match.match();
+                    if(stem){
+                        semanticTerm = stemTerm(semanticTerm);
+
                     }
+                    //todo insert to if queryToRank.getDesc().contains(semanticTerm) and increase numOfResults
+                    if((indexedTerms.contains(semanticTerm) || indexedTerms.contains(semanticTerm.toLowerCase()) || indexedTerms.contains(semanticTerm.toUpperCase())) && !queryTerm.contains(semanticTerm)){
+                        queryWithSemantic.add(semanticTerm.toLowerCase());
+                        queryWithSemantic.add(semanticTerm.toUpperCase());
+                        queryWithSemantic.add(semanticTerm);
+                        //addDocstoRetrievedDocs(semanticTerm,retrievedDocsWithSemantics);
+                    }
+                    if(isDescription){
+                        ArrayList<String> descSemantic = new ArrayList<>();
+                        ArrayList<String> descSet = queryToRank.getTokenDesc();
+                        for(String desc: descSet){
+                            if(stem){
+                                desc = stemTerm(desc);
+                            }
+                            descSemantic.add(desc);
+                            descSemantic.add(desc.toLowerCase());
+                            descSemantic.add(desc.toUpperCase());
+                        }
+                        queryWithSemantic.addAll(descSemantic);
+                    }
+
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (com.medallia.word2vec.Searcher.UnknownWordException e) {
+            }catch (com.medallia.word2vec.Searcher.UnknownWordException e) {
                 // TERM NOT KNOWN TO MODEL
             }
         }
     }
 
-    private Map<String, Double> rankDocs(Set<String> retrievedDocs, Set<String> retrievedDocsWithSemantics, List<String> queryToRank, List<String> queryWithSemantic) {
+    private String stemTerm(String semanticTerm) {
+        porterStemmer ps = new porterStemmer();
+        ps.setCurrent(semanticTerm);
+        ps.stem();
+        return ps.getCurrent();
+    }
+
+
+    private Map<String, Double> rankDocs(Set<String> retrievedDocs, List<String> queryToRank, List<String> queryWithSemantic) {
         Ranker ranker = new Ranker();
         Map<String,Double> docsRanks = new HashMap<>();
         for(String doc: retrievedDocs){
-            docsRanks.put(doc,ranker.score(queryToRank,doc));
-        }
-        for(String doc: retrievedDocsWithSemantics){
-            if(docsRanks.containsKey(doc)){
-                double originalRank = docsRanks.remove(doc);
-                double newRank = 0.8*originalRank +0.2*ranker.score(queryWithSemantic,doc);
-                docsRanks.put(doc,newRank);
-            }
-            else{
-                docsRanks.put(doc,ranker.score(queryToRank,doc));
-            }
+            double originalRank = ranker.score(queryToRank,doc);
+            double newRank = 0.9*originalRank +0.1*ranker.score(queryWithSemantic,doc);
+            docsRanks.put(doc,newRank);
+
         }
 
         return docsRanks;
@@ -327,30 +391,30 @@ public class viewModel {
         }
     }
 
-    private Map<String,Integer> topFifty(Map<String,Integer> docRanked){
-        //Map<String,Integer> topFifty = new HashMap<>();
+    private Map<String,Double> topFifty(Map<String,Double> docRanked){
+        Map<String,Double> docRankCopy = new HashMap<>(docRanked);
         if(docRanked.size()>50) {
             int numberOfdocs = 0;
-            Map<String,Integer> topFifty = new HashMap<>();
+            Map<String,Double> topFifty = new HashMap<>();
             while (numberOfdocs!=50) {
                 //int max = entitiesPerDoc.get(0);
-                Set<String> str = docRanked.keySet();
-                String [] strArr = new String[docRanked.keySet().size()];
+                Set<String> str = docRankCopy.keySet();
+                String [] strArr = new String[docRankCopy.keySet().size()];
                 strArr = str.toArray(strArr);
-                int max = docRanked.get(strArr[0]);
+                double max = docRankCopy.get(strArr[0]);
                 String maxString  =strArr[0];
                 for (int k = 1; k < strArr.length; k++) {
-                    if (docRanked.get(strArr[k])>max) {
-                        max = docRanked.get(strArr[k]);
+                    if (docRankCopy.get(strArr[k])>max) {
+                        max = docRankCopy.get(strArr[k]);
                         maxString = strArr[k];
                     }
                 }
-                docRanked.remove(maxString);
+                docRankCopy.remove(maxString);
                 topFifty.put(maxString,max);
                 numberOfdocs++;
             }
             return topFifty;
-        }else if(docRanked.keySet().size()>=0){
+        }else if(docRankCopy.keySet().size()>=0){
             return docRanked;
         }
         return null;

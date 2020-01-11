@@ -9,6 +9,7 @@ public class Query {
     private String description;
     private  String narrative;
     private ArrayList<String> tokenQuery;
+    private ArrayList<String> tokenDesc;
 
     public Query(String numOfQuery, String title, String description, String narrative) {
         this.numOfQuery = numOfQuery;
@@ -16,6 +17,7 @@ public class Query {
         this.description = description;
         this.narrative = narrative;
         this.tokenQuery = new ArrayList<>();
+        this.tokenDesc= new ArrayList<>();
     }
 
     public ArrayList<String> getTokenQuery() {
@@ -29,8 +31,19 @@ public class Query {
         }
     }
 
+    public void setTokenDesc(ArrayList<String> tokenQuery) {
+        for (String str:tokenQuery)
+        {
+            this.tokenDesc.add(str);
+        }
+    }
+
     public String getNumOfQuery() {
         return numOfQuery;
+    }
+
+    public ArrayList<String> getTokenDesc() {
+        return tokenDesc;
     }
 
     public String getTitle() {

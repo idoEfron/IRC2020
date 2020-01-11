@@ -13,13 +13,17 @@ public class Searcher {
     private ReadFile readFile;
     private Indexer indexer;
     private String query;
+    private boolean description;
+    private boolean stem;
     private ArrayList<String> queriesTokens;
 
-    public Searcher(String query, String stopWordPath, Boolean stem) throws IOException, ParseException {
+    public Searcher(String query, String stopWordPath, Boolean stem,boolean description) throws IOException, ParseException {
         indexer = new Indexer(stem, stopWordPath);
         readFile = new ReadFile(null, indexer, stem, stopWordPath);
-        parser = new Parser(stem, readFile, stopWordPath, indexer, true);
+        parser = new Parser(false, readFile, stopWordPath, indexer, true);
         this.query = query;
+        this.description = description;
+        this.stem = stem;
         queriesTokens = new ArrayList<>();
     }
 
@@ -85,11 +89,23 @@ public class Searcher {
             Query query = listQueries.get(i);
             queriesTokens=new ArrayList<>();
             String title = "<TEXT>"+query.getTitle()+"</TEXT>";
+
             ArrayList<String> temp = new ArrayList<>();
             temp.add(title);
             parser.parseDocs(temp);
-            queriesTokens = parser.getQueryArray();
-            query.setTokenQuery(parser.getQueryArray());
+            queriesTokens = new ArrayList<>(parser.getQueryArray());
+            query.setTokenQuery(queriesTokens);
+            parser.getQueryArray().clear();
+
+            ArrayList<String> descArray = new ArrayList<>();
+            String desc ="";
+            if(description){
+                desc= "<TEXT>"+query.getDescription()+"</TEXT>";
+                descArray.add(desc);
+            }
+            parser.parseDocs(descArray);
+            query.setTokenDesc(new ArrayList<>(parser.getQueryArray()));
+
         }
         return listQueries;
     }
@@ -140,13 +156,29 @@ public class Searcher {
                 }
             }
         scanner.close();
+
         String title = "<TEXT>"+queryParse.getTitle()+"</TEXT>";
         ArrayList<String> temp = new ArrayList<>();
         temp.add(title);
         parser.parseDocs(temp);
-        queryParse.setTokenQuery(parser.getQueryArray());
-        queriesTokens = parser.getQueryArray();
+        queriesTokens = new ArrayList<>(parser.getQueryArray());
+        queryParse.setTokenQuery(queriesTokens);
+        parser.getQueryArray().clear();
+
+        ArrayList<String> descArray = new ArrayList<>();
+        String desc ="";
+        if(description){
+            desc= "<TEXT>"+queryParse.getDescription()+"</TEXT>";
+            descArray.add(desc);
+        }
+        parser.parseDocs(descArray);
+        queryParse.setTokenDesc(new ArrayList<>(parser.getQueryArray()));
+
         return queryParse;
+    }
+
+    public boolean isStem() {
+        return stem;
     }
 }
 
