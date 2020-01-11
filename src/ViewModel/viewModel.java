@@ -78,7 +78,7 @@ public class viewModel {
 
 
         Indexer index = new Indexer(stem, postPath);
-
+        //todo ido termdic and docdic
         File file = new File( postPath + "/termDictionary.txt" );
         file.createNewFile();
         FileWriter writer = new FileWriter(file);
@@ -92,13 +92,25 @@ public class viewModel {
                 System.out.println(records.getKey());
             }
         }
+
+        File fileDoc = new File( postPath + "/docDictionary.txt" );
+        fileDoc.createNewFile();
+        FileWriter writerDoc = new FileWriter(fileDoc);
+        for (String doc: Indexer.getDocDictionary().keySet()){
+               String doctxt = doc + ">" + (String) Indexer.getDocDictionary().get(doc).keySet().toArray()[0] + ">" + Indexer.getDocDictionary().get(doc).values();
+            writerDoc.write(doctxt + "\n");
+        }
         writer.flush();
         writer.close();
+        writerDoc.flush();
+        writerDoc.close();
 
         int[] corpusInfo = new int[2];
         corpusInfo[0] = index.getNumberOfTerms();
         corpusInfo[1] = ReadFile.getDocs();
         ReadFile.setDocs(0);
+        Indexer.getTermDictionary().clear();
+        Indexer.getDocDictionary().clear();
         return corpusInfo;
     }
 
@@ -199,6 +211,36 @@ public class viewModel {
             }
         }
         index.setTermDictionary(termDictionary);
+        br.close();
+        File docFile = new File(postPath + "/docDictionary.txt");
+        BufferedReader brDoc = new BufferedReader(new FileReader(docFile));
+        String strDoc;
+        HashMap<String, Map<String,Set<String>>> docDictionary = new HashMap<>();
+        while ((strDoc = brDoc.readLine()) != null) {
+            String[] term = strDoc.split(">");
+                docDictionary.put(term[0], new HashMap<>());
+                docDictionary.get(term[0]).put(term[1],new HashSet<>());
+                String set = term[2];
+                set = set.replaceAll("\\[","");
+                set = set.replaceAll("]","");
+                String [] setArr = set.split(",");
+                for(int i=0;i<setArr.length;i++){
+                    docDictionary.get(term[0]).get(term[1]).add(setArr[i]);
+                }
+        }
+        index.setDocDictionary(docDictionary);
+        brDoc.close();
+        File corpusInfo = new File(postPath + "/corpusInfo.txt");
+        BufferedReader buffCor = new BufferedReader(new FileReader(corpusInfo));
+        String strCor;
+        if((strCor = buffCor.readLine()) != null){
+            String[] strArr = strCor.split(">");
+            if(strArr.length==2){
+                ReadFile.setDocs(Integer.parseInt(strArr[0]));
+                Indexer.setTotalDocLength(Double.parseDouble(strArr[1]));
+            }
+        }
+        buffCor.close();
     }
 
     public LinkedList<String> startQuery(String path, String stopWordsPath, boolean stem, boolean semanticSelected) throws IOException, ParseException, InterruptedException {

@@ -27,6 +27,7 @@ import java.util.*;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 public class Controller implements Initializable {
     private viewModel viewModel = new viewModel();
@@ -200,7 +201,7 @@ public class Controller implements Initializable {
             stage.setTitle("queries");
             window.show();
             if(viewModel.getDocumentInQuery().size()>0&&viewModel.getDocumentInQuery()!=null){
-                comboBox.getItems().addAll(viewModel.getDocumentInQuery());
+                comboBox.getItems().addAll(viewModel.getDocumentInQuery().stream().sorted().collect(Collectors.toList()));
             }
         } else {
             showAlert("There's nothing to display");

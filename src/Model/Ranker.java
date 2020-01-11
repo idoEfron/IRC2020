@@ -52,8 +52,8 @@ public class Ranker {
 
     private int getDocLength(String doc) {
         String posting ="";
-        HashMap<String, String> indexer = Indexer.getDocDictionary();
-        String path = indexer.get(doc);
+        HashMap<String, Map <String,Set<String>>> indexer = Indexer.getDocDictionary();
+        String path = (String) indexer.get(doc).keySet().toArray()[0];//todo ido change docdic
 
         // ******* reading first line ********
 

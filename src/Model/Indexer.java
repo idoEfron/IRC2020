@@ -11,14 +11,16 @@ import java.util.concurrent.Semaphore;
 public class Indexer {
 
     private static Map<String, Map<String,ArrayList<Integer>>> termDictionary = new TreeMap<>();
-    private static HashMap<String, String> docDictionary = new HashMap<>();
+    private static HashMap<String,Map< String,Set<String>>> docDictionary = new HashMap<>();
     private String postingPath;//todo ido add!!!!!!!!!!!!!!!!!!!!!!!!!!
     private File subFolderTerms;
     private File subFolderDocs;
     //private static Semaphore mutex = new Semaphore(1);
     private static double totalDocLength;
 
-    public static HashMap<String, String> getDocDictionary() {
+
+
+    public static HashMap<String, Map<String,Set<String>>> getDocDictionary() {
         return docDictionary;
     }
     public static double getTotalDocLength() {
@@ -115,6 +117,7 @@ public class Indexer {
         PrintWriter writer=null;
 
         Map <Token,Map<String,ArrayList<String>>> termMap = p.getTermMap();
+        //Map<String,Set<String>> docListTopFive = p.getTopFiveEntitiesDocs();
         Set<Token> tknSet = termMap.keySet();
 
         Map <String ,List<String>> lines = new HashMap<>();
@@ -212,7 +215,7 @@ public class Indexer {
                     }
                 }
             }
-           // mutex.release();
+            // mutex.release();
         }
         for (String str:lines.keySet()){
             writeRaw(lines.get(str),str);
@@ -229,16 +232,20 @@ public class Indexer {
                 if (!createdFile) {
                     throw new FilerException("cannot create file for indexer corpus" + docID);
                 }
-                docDictionary.put(docID, file.getPath());
+                //todo ido add
+                Map <String,Set<String>> temp = new HashMap<>();
+                //temp.put(file.getPath(),docListTopFive.get(docID));
+                docDictionary.put(docID,temp);
             }
+
             filewriter = new FileWriter(file, true);
             bw = new BufferedWriter(filewriter);
             writer = new PrintWriter(bw);
 
             String topFive ="";
-            for(String str: p.getTopFiveEntitiesDocs().get(docID)){
-                topFive = topFive+"," +str;
-            }
+//            for(String str: p.getTopFiveEntitiesDocs().get(docID)){
+//                topFive = topFive+"," +str;
+//            }
             // posting line format: maxTf,numOfUniqueWords,docLength,topFiveWord
             writer.print(p.getMaxTf().get(docID) + "," + p.getWordCounter().get(docID) + ","+p.getDocLength().get(docID) +topFive);
             writer.close();
@@ -341,11 +348,18 @@ public class Indexer {
 
     }
 
+    public static void setDocDictionary(HashMap<String, Map<String, Set<String>>> docDictionary) {
+        Indexer.docDictionary = docDictionary;
+    }
+
     /**
      * this function is a setter that save the term Dictionary
      * @param termDictionary
      */
     public static void setTermDictionary(Map<String, Map<String, ArrayList<Integer>>> termDictionary) {
         Indexer.termDictionary = termDictionary;
+    }
+    public static void setTotalDocLength(double totalDocLength) {
+        Indexer.totalDocLength = totalDocLength;
     }
 }

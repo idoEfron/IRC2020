@@ -29,9 +29,8 @@ public class Parser {
     private Indexer indexer;
     private boolean isQuery;
     private String fileName;
-    private String filePath;
-    private Map<String, Integer> entitiesPerDoc;
-    private Map<String, Set<String>> topFiveEntitiesDocs;
+    private Map<String, Map<String, String>> entitiesPerDoc;
+    //private Map<String, Set<String>> topFiveEntitiesDocs;
     private Map<String, Integer> docLength;
     private static Semaphore mutex = new Semaphore(1);
 
@@ -61,13 +60,13 @@ public class Parser {
         maxTf = new HashMap<>();
         termMap = new LinkedHashMap<>();
         stopwords = new HashSet<String>();
-        topFiveEntitiesDocs = new HashMap<String, Set<String>>();
+        //topFiveEntitiesDocs = new HashMap<String, Set<String>>();
         entitiesPerDoc = new HashMap<>();
         if (rf.getSubFolder() == null) {
             fileName = "query";
         } else {
             fileName = rf.getSubFolder().get(0).getName();
-            filePath = rf.getSubFolder().get(0).getPath();
+            //filePath = rf.getSubFolder().get(0).getPath();
         }
         months = new HashMap<String, String>() {{
             put("January", "01");
@@ -206,9 +205,9 @@ public class Parser {
                 docNo = "";
                 title = "";
                 date = "";
+
                 if (docId.contains("<DOCNO>")) {
                     docNo = docId.substring(docId.indexOf("<DOCNO>") + 8, docId.indexOf("</DOCNO>") - 1);
-
                 }
                 if (docId.contains("<TI>")) {
                     title = docId.substring(docId.indexOf("<TI>"), docId.indexOf("</TI>"));
@@ -329,41 +328,48 @@ public class Parser {
                             }
                         }//bracket on the else
                     }//for on the tokens after split
-
+                    entitiesPerDoc.put(docNo,new HashMap<>());//todo ido add
                     handler(afterCleaning, docNo, date, title);
                 }
             }
             wordCounter.put(docNo, termsInDoc.size());
-            if (entitiesPerDoc.size() > 5) {
-                int numberOfEntities = 0;
-                Set<String> topFive = new HashSet<>();
-                while (numberOfEntities != 5) {
-                    //int max = entitiesPerDoc.get(0);
-                    Set<String> str = entitiesPerDoc.keySet();
-                    String[] strArr = new String[entitiesPerDoc.keySet().size()];
-                    strArr = str.toArray(strArr);
-                    int max = entitiesPerDoc.get(strArr[0]);
-                    String maxString = strArr[0];
-                    for (int k = 1; k < strArr.length; k++) {
-                        if (entitiesPerDoc.get(strArr[k]) > max) {
-                            max = entitiesPerDoc.get(strArr[k]);
-                            maxString = strArr[k];
-                        }
-                    }
-                    entitiesPerDoc.remove(maxString);
-                    topFive.add(maxString);
-                    numberOfEntities++;
-                }
-                topFiveEntitiesDocs.put(docNo, topFive);
-            }
-            else if (entitiesPerDoc.size() >= 0)
-            {
-                topFiveEntitiesDocs.put(docNo, new HashSet<>(entitiesPerDoc.keySet()));
-            }
-            entitiesPerDoc.clear();
+            //todo!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//            if (entitiesPerDoc.size() > 5) {
+//                int numberOfEntities = 0;
+//                Set<String> topFive = new HashSet<>();
+//                while (numberOfEntities != 5) {
+//                    //int max = entitiesPerDoc.get(0);
+//                    Set<String> str = entitiesPerDoc.keySet();
+//                    String[] strArr = new String[entitiesPerDoc.keySet().size()];
+//                    strArr = str.toArray(strArr);
+//                    int max = entitiesPerDoc.get(strArr[0]);
+//                    String maxString = strArr[0];
+//                    for (int k = 1; k < strArr.length; k++) {
+//                        if (entitiesPerDoc.get(strArr[k]) > max) {
+//                            max = entitiesPerDoc.get(strArr[k]);
+//                            maxString = strArr[k];
+//                        }
+//                    }
+//                    entitiesPerDoc.remove(maxString);
+//                    topFive.add(maxString);
+//                    numberOfEntities++;
+//                }
+//                topFiveEntitiesDocs.put(docNo, topFive);
+//            }
+//            else if (entitiesPerDoc.size() >= 0)
+//            {
+//                topFiveEntitiesDocs.put(docNo, new HashSet<>(entitiesPerDoc.keySet()));
+//            }
             termsInDoc.clear();
         }//bracket on the for on the doc list's
-
+        String postingPath = indexer.getPostingPath() + "/docEntities.txt";
+        PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(postingPath,true)));
+        for (String docsId:entitiesPerDoc.keySet()) {
+            String ent  = entitiesPerDoc.get(docsId).toString();
+            writer.append(docsId + ">" + ent +"\n");
+        }
+        writer.flush();
+        writer.close();
         stopwords.clear();
         months.clear();
         mass.clear();
@@ -906,29 +912,32 @@ public class Parser {
         if (entities.containsKey(entity.toUpperCase())) {
             if (entities.get(entity.toUpperCase()).containsKey(docID)) {
                 entities.get(entity.toUpperCase()).get(docID).set(0, String.valueOf(Integer.parseInt(entities.get(entity.toUpperCase()).get(docID).get(0)) + 1));
+                entitiesPerDoc.get(docID).put(entity.toUpperCase(), String.valueOf(Integer.parseInt(entities.get(entity.toUpperCase()).get(docID).get(0)) + 1));
 
             } else {
                 entities.get(entity.toUpperCase()).put(docID, new ArrayList<String>(3));
                 entities.get(entity.toUpperCase()).get(docID).add(0, "1");
                 entities.get(entity.toUpperCase()).get(docID).add(1, String.valueOf(Boolean.compare(title.contains(entity), false)));
                 entities.get(entity.toUpperCase()).get(docID).add(2, date);
+                entitiesPerDoc.get(docID).put(entity.toUpperCase(), "1");
             }
             if (this.indexer.getTermDictionary().containsKey(entity.toUpperCase())) {
-                String str = entities.get(entity.toUpperCase()).get(docID).get(0);
-                entitiesPerDoc.put(entity.toUpperCase(), Integer.parseInt(entities.get(entity).get(docID).get(0)));
+                // String str = entities.get(entity.toUpperCase()).get(docID).get(0);
+                //  entitiesPerDoc.put(entity.toUpperCase(), Integer.parseInt(entities.get(entity.toUpperCase()).get(docID).get(0)));
+                Map<String, ArrayList<String>> tempMap = entities.remove(entity.toUpperCase());
                 termMap.put(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName), entities.remove(entity.toUpperCase()));
 
             } else if (entities.get(entity.toUpperCase()).size() >= 2) {
-                String str = entities.get(entity.toUpperCase()).get(docID).get(0);
+                //String str = entities.get(entity.toUpperCase()).get(docID).get(0);
                 //String num =  Integer.valueOf(entities.get(entity).get(docID).get(0));
-                entitiesPerDoc.put(entity.toUpperCase(), Integer.parseInt(entities.get(entity.toUpperCase()).get(docID).get(0)));
+                //entitiesPerDoc.put(entity.toUpperCase(), Integer.parseInt(entities.get(entity.toUpperCase()).get(docID).get(0)));
                 termMap.put(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName), entities.remove(entity.toUpperCase()));
             }
         } else if (termMap.containsKey(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName)) && entity.split("[-:, ]").length > 1) {
             if (termMap.get(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName)).containsKey(docID)) {
                 termMap.get(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName)).get(docID).set(0, String.valueOf(Integer.parseInt(termMap.get(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName)).get(docID).get(0)) + 1));
                 int num = Integer.parseInt(termMap.get(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName)).get(docID).get(0));
-                entitiesPerDoc.put(entity.toUpperCase(), num);
+                entitiesPerDoc.get(docID).put(entity.toUpperCase(), String.valueOf(num));
 
 
             } else {
@@ -936,8 +945,8 @@ public class Parser {
                 termMap.get(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName)).get(docID).add(0, "1");
                 termMap.get(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName)).get(docID).add(1, String.valueOf(Boolean.compare(title.contains(entity), false)));
                 termMap.get(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName)).get(docID).add(2, date);
-                entitiesPerDoc.put(entity.toUpperCase(), 1);
-
+                //entitiesPerDoc.put(docID, new HashMap<>());
+                entitiesPerDoc.get(docID).put(entity.toUpperCase(), "1");
             }
         } else {
             if (entity.split("[-:, ]").length > 1) {
@@ -947,6 +956,8 @@ public class Parser {
                 entities.get(entity.toUpperCase()).get(docID).add(0, "1");
                 entities.get(entity.toUpperCase()).get(docID).add(1, String.valueOf(Boolean.compare(title.contains(entity), false)));
                 entities.get(entity.toUpperCase()).get(docID).add(2, date);
+                //entitiesPerDoc.put(docID, new HashMap<>());
+                entitiesPerDoc.get(docID).put(entity.toUpperCase(), "1");
                 mutex.release();
             }
         }
@@ -1279,10 +1290,9 @@ public class Parser {
     }
 
 
-    public Map<String, Set<String>> getTopFiveEntitiesDocs() {
-        return topFiveEntitiesDocs;
-
-    }
-
+//    public Map<String, Set<String>> getTopFiveEntitiesDocs() {
+//        return topFiveEntitiesDocs;
+//    }
+//
 
 }
