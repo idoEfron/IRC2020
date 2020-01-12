@@ -30,6 +30,7 @@ public class Parser {
     private boolean isQuery;
     private String fileName;
     private Map<String, Map<String, String>> entitiesPerDoc;
+    private static  int blockNum = 0;
     //private Map<String, Set<String>> topFiveEntitiesDocs;
     private Map<String, Integer> docLength;
     private static Semaphore mutex = new Semaphore(1);
@@ -326,28 +327,37 @@ public class Parser {
                             }
                         }//bracket on the else
                     }//for on the tokens after split
-                    entitiesPerDoc.put(docNo,new HashMap<>());//todo ido add
+                    entitiesPerDoc.put(docNo, new HashMap<>());//todo ido add
                     handler(afterCleaning, docNo, date, title);
                 }
             }
             wordCounter.put(docNo, termsInDoc.size());
             termsInDoc.clear();
         }//bracket on the for on the doc list's
-        String postingPath = indexer.getPostingPath() + "/docEntities.txt";
-        PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(postingPath,true)));
-        for (String docsId:entitiesPerDoc.keySet()) {
-            String ent  = entitiesPerDoc.get(docsId).toString();
-            writer.append(docsId + ">" + ent +"\n");
+        mutex.acquire();
+        blockNum++;
+        mutex.release();
+        if (isQuery==false) {
+            File mergeDocLoction = new File(indexer.getPostingPath() + "/docsEnts");
+            if(!mergeDocLoction.exists()){
+                mergeDocLoction.mkdir();
+            }
+            String postingPath = indexer.getPostingPath() + "/docsEnts" + "/" + blockNum +".txt";
+            PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(postingPath, true)));
+            for (String docsId : entitiesPerDoc.keySet()) {
+                String ent = entitiesPerDoc.get(docsId).toString();
+                writer.append(docsId + " : " + ent + "\n");
+            }
+            writer.flush();
+            writer.close();
         }
-        writer.flush();
-        writer.close();
         months.clear();
         mass.clear();
         electrical.clear();
         if (isQuery) {
             queryArray = new ArrayList<>();
             for (Token t : termMap.keySet()) {
-                if(!stopwords.contains(t.getStr().toLowerCase())){
+                if (!stopwords.contains(t.getStr().toLowerCase())) {
                     queryArray.add(t.getStr());
                 }
             }
@@ -897,7 +907,7 @@ public class Parser {
             }
             if (this.indexer.getTermDictionary().containsKey(entity.toUpperCase())) {
                 Map<String, ArrayList<String>> tempMap = entities.remove(entity.toUpperCase());
-                termMap.put(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName), entities.remove(entity.toUpperCase()));
+                termMap.put(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName), tempMap);
 
             } else if (entities.get(entity.toUpperCase()).size() >= 2) {
                 termMap.put(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName), entities.remove(entity.toUpperCase()));

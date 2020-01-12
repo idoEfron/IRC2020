@@ -4,9 +4,12 @@ import Model.*;
 import Model.Merge;
 import Model.ReadFile;
 import com.medallia.word2vec.Word2VecModel;
+import com.sun.scenario.effect.impl.prism.PrImage;
 import snowball.ext.porterStemmer;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -15,10 +18,16 @@ import java.util.concurrent.Executors;
 public class viewModel {
     private File subFolderTerms = null;
     private List<String> documentInQuery;
-    private String postPath;
+    private static String postPath;
+    private Map<String,Map<String,Double>> docsRanks;
+    private String corPath;
 
     public viewModel() {
         documentInQuery = new LinkedList<>();
+    }
+
+    public static String getPostPath() {
+        return postPath;
     }
 
     /**
@@ -75,14 +84,21 @@ public class viewModel {
         executor = Executors.newFixedThreadPool(4);
         for (File file : subFolderTerms.listFiles()) {
             if (file.isDirectory()) {
-                Merge merge = new Merge(file.listFiles());
+                Merge merge = new Merge(file.listFiles(),false);
                 executor.execute(new Thread(merge));
             }
         }
         executor.shutdown();
+
         while (!executor.isTerminated()) {
         }
+        File fileDocs = new File(postPath + "/docsEnts");
+        File [] fileArr = fileDocs.listFiles();
+        Merge merge = new Merge(fileDocs.listFiles(),true);
+        merge.run();
 
+        File docEntsMerge = new File(postPath + "/docsEnts/docsEnts_merged.txt" );
+        uploadMap(postPath,docEntsMerge,Indexer.getTermDictionary());
 
         Indexer index = new Indexer(stem, postPath);
 
@@ -99,6 +115,8 @@ public class viewModel {
                 System.out.println(records.getKey());
             }
         }
+
+
 
         File fileDoc = new File( postPath + "/docDictionary.txt" );
         fileDoc.createNewFile();
@@ -117,6 +135,74 @@ public class viewModel {
         corpusInfo[1] = ReadFile.getDocs();
 
         return corpusInfo;
+    }
+    private void uploadMap(String posting,File docEntities, Map<String, Map<String, ArrayList<Integer>>> newIndex) throws IOException {
+        if (docEntities.exists()) {
+            List<String> doctxt = Files.readAllLines(docEntities.toPath(), StandardCharsets.UTF_8);
+            //docEntities.delete();
+            HashMap<String, Map<String, String>> hashDocEnt = new HashMap<>();
+            for (int i = 0; i < doctxt.size(); i++) {
+                String[] strArr = doctxt.get(i).split(" : ");
+                hashDocEnt.put(strArr[0], new HashMap<>());
+                String map = strArr[1].replaceAll("\\{", "");
+                map = map.replaceAll("}", "");
+                if (map.contains(",")) {
+                    String[] split = map.split(", ");
+                    for (String s : split) {
+                        try {
+                            if (s.contains("=")) {
+                                String[] value = s.split("=");
+                                hashDocEnt.get(strArr[0]).put(value[0], value[1]);
+                            }
+                        } catch (ArrayIndexOutOfBoundsException e) {
+                            System.out.println(strArr[0]);
+                        }
+                    }
+                }
+            }
+            HashMap<String,Map< String,Set<String>>> docDictionary = new HashMap<>();
+            if (hashDocEnt.size() > 0) {
+                for (String s:hashDocEnt.keySet()) {
+                    hashDocEnt.get(s).keySet().retainAll(newIndex.keySet());
+                    docDictionary.put(s,new HashMap<>());
+                    // selectTopFive(s,postingPath,hashDocEnt.get(s));
+                    docDictionary.put(s,selectTopFive(s,posting,hashDocEnt.get(s)));
+                }
+                Indexer.setDocDictionary(docDictionary);
+            }
+
+        }
+    }
+    public Map<String,Set<String>> selectTopFive(String s,String postingPath, Map<String, String> hashDocEnt){
+        Map<String, String> copyHashDocEnt = new HashMap<>(hashDocEnt);
+        Map<String,Set<String>> topFiveEntitiesDocs = new HashMap<>();
+        if (hashDocEnt.size() > 5) {
+            int numberOfEntities = 0;
+            Set<String> topFive = new HashSet<>();
+            while (numberOfEntities != 5) {
+                //int max = entitiesPerDoc.get(0);
+                Set<String> str = copyHashDocEnt.keySet();
+                String[] strArr = new String[copyHashDocEnt.keySet().size()];
+                strArr = str.toArray(strArr);
+                int max = Integer.parseInt(copyHashDocEnt.get(strArr[0]));
+                String maxString = strArr[0];
+                for (int k = 1; k < strArr.length; k++) {
+                    if (Integer.parseInt(copyHashDocEnt.get(strArr[k])) > max) {
+                        max = Integer.parseInt(copyHashDocEnt.get(strArr[k]));
+                        maxString = strArr[k];
+                    }
+                }
+                copyHashDocEnt.remove(maxString);
+                topFive.add(maxString);
+                numberOfEntities++;
+            }
+            topFiveEntitiesDocs.put(corPath +"/Docs/"+ s + ".txt" , topFive);
+        }
+        else if (copyHashDocEnt.size() >= 0)
+        {
+            topFiveEntitiesDocs.put(corPath +"/Docs/"+ s + ".txt", new HashSet<>(copyHashDocEnt.keySet()));
+        }
+        return topFiveEntitiesDocs;
     }
 
     /**
@@ -151,6 +237,10 @@ public class viewModel {
         subFolderTerms.mkdir();
         File subFolderDocs = new File(postPath + "/" + folder + "/Docs");
         subFolderDocs.mkdir();
+        File subEntDocs = new File(postPath +  "/docsEnts");
+        subEntDocs.mkdir();
+        File mergeEntDocs = new File(subEntDocs.getPath() +  "/docsEnts_merged.txt");
+        mergeEntDocs.createNewFile();
         for (char i = 'a'; i <= 'z'; i++) {
             File Tfolder = new File(postPath + "/" + folder + "/Terms/" + i);
             Tfolder.mkdir();
@@ -161,6 +251,7 @@ public class viewModel {
         Sfolder.mkdir();
         File merged = new File(subFolderTerms.getPath() + "/special", "special" + "_merged.txt");
         merged.createNewFile();
+        corPath = directory.getAbsolutePath();
         //File mergedDoc = new File(subFolderDocs.getPath() + "/docDictionary", "docDictionary" + "_merged.txt");
         //mergedDoc.createNewFile();
     }
@@ -252,12 +343,12 @@ public class viewModel {
     public LinkedList<String> startQuery(String path, String stopWordsPath, boolean stem, boolean semanticSelected,boolean isDescription) throws IOException, ParseException, InterruptedException {
         Searcher searcher = new Searcher(path, stopWordsPath, stem,isDescription);
         List<Query> queryList = searcher.readQuery();
-        Map<String,Map<String,Double>> docsRanks = new HashMap<>();
+        docsRanks = new HashMap<>();
         for(Query query: queryList){
             docsRanks.put(query.getNumOfQuery(),getAllRankedDocs(query,semanticSelected, stem, isDescription));
         }
 
-        writeToResultFile(docsRanks);
+        //writeToResultFile(docsRanks);
 
         return displayQueries(docsRanks);
     }
@@ -287,26 +378,29 @@ public class viewModel {
     public LinkedList<String> startSingleQuery(String query, String stopWordsPath, boolean stem, boolean semanticSelected,boolean isDescription) throws IOException, ParseException, InterruptedException {
         Searcher searcher = new Searcher(query, stopWordsPath, stem,isDescription);
         Query singleQuery = searcher.startSingleQuery();
-        Map<String,Map<String,Double>> docsRanks = new HashMap<>();
+        docsRanks = new HashMap<>();
         docsRanks.put(singleQuery.getNumOfQuery(),getAllRankedDocs(singleQuery,semanticSelected,stem,isDescription));
-
-        writeToResultFile(docsRanks);
-
+        //writeToResultFile(docsRanks);
         return displayQueries(docsRanks);
     }
 
-    private void writeToResultFile(Map<String, Map<String, Double>> docsRanks) throws IOException {
-
-        File file = new File( postPath + "/results.txt" );
-        file.createNewFile();
-        FileWriter writer = new FileWriter(file);
-        for(Map.Entry<String, Map<String, Double>> entry: docsRanks.entrySet()){
-            for(Map.Entry<String, Double> docEntry: entry.getValue().entrySet()){
-                writer.write(entry.getKey() + " " + "0"+ " " +docEntry.getKey() +" "+docEntry.getValue() +" "+ "42.38" + " " + "i&i"+'\n');
+    public void writeToResultFile(String path) throws IOException {
+        if (docsRanks.size()>0) {
+            File file = new File(path + "/results.txt");
+            file.createNewFile();
+            FileWriter writer = new FileWriter(file);
+            for (Map.Entry<String, Map<String, Double>> entry : docsRanks.entrySet()) {
+                for (Map.Entry<String, Double> docEntry : entry.getValue().entrySet()) {
+                    writer.write(entry.getKey() + " " + "0" + " " + docEntry.getKey() + " " + docEntry.getValue() + " " + "42.38" + " " + "i&i" + '\n');
+                }
             }
+            writer.flush();
+            writer.close();
         }
-        writer.flush();
-        writer.close();
+    }
+
+    public Map<String, Map<String, Double>> getDocsRanks() {
+        return docsRanks;
     }
 
     public List<String> getDocumentInQuery() {

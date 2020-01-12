@@ -12,7 +12,7 @@ public class Indexer {
 
     private static Map<String, Map<String,ArrayList<Integer>>> termDictionary = new TreeMap<>();
     private static HashMap<String,Map< String,Set<String>>> docDictionary = new HashMap<>();
-    private String postingPath;//todo ido add!!!!!!!!!!!!!!!!!!!!!!!!!!
+    private static String postingPath;//todo ido add!!!!!!!!!!!!!!!!!!!!!!!!!!
     private File subFolderTerms;
     private File subFolderDocs;
     private static Semaphore mutex = new Semaphore(1);
@@ -91,7 +91,12 @@ public class Indexer {
      * todo ido add!!!!!!!!!!!!!!!!!!!!!!
      * @return
      */
-    public String getPostingPath() {
+//    public String getPostingPath() {
+//        return postingPath;
+//    }
+
+
+    public static String getPostingPath() {
         return postingPath;
     }
 
