@@ -34,10 +34,10 @@ public class Merge implements Runnable {
         List<String> mergedText = new ArrayList<>();
         String parent = files[0].getParent();
         File temp = new File(files[0].getParent());
-        File posting = new File(temp.getParent());
-        String postingPath = new File(posting.getParent()).getParent();
+        String posting = new File(temp.getParent()).getParent();
+        String postingPath = new File(posting).getParent();
         File docEntities = new File(postingPath + "/" + "docEntities.txt");
-        uploadMap(postingPath,docEntities, newIndex);
+        uploadMap(posting,docEntities, newIndex);
         File docInfo = new File(postingPath + "/" + "corpusInfo.txt");
         if(!docInfo.exists()) {
             saveNumDocsAndDocLength(postingPath, ReadFile.getDocs(), Indexer.getTotalDocLength());
@@ -110,7 +110,7 @@ public class Merge implements Runnable {
     }
 
     //todo ido add
-    private void uploadMap(String postingPath,File docEntities, Map<String, Map<String, ArrayList<Integer>>> newIndex) throws IOException {
+    private void uploadMap(String posting,File docEntities, Map<String, Map<String, ArrayList<Integer>>> newIndex) throws IOException {
         if (docEntities.exists()) {
             List<String> doctxt = Files.readAllLines(docEntities.toPath(), StandardCharsets.UTF_8);
             docEntities.delete();
@@ -140,7 +140,7 @@ public class Merge implements Runnable {
                     hashDocEnt.get(s).keySet().retainAll(newIndex.keySet());
                     docDictionary.put(s,new HashMap<>());
                    // selectTopFive(s,postingPath,hashDocEnt.get(s));
-                    docDictionary.put(s,selectTopFive(s,postingPath,hashDocEnt.get(s)));
+                    docDictionary.put(s,selectTopFive(s,posting,hashDocEnt.get(s)));
                 }
                 Indexer.setDocDictionary(docDictionary);
             }
@@ -170,11 +170,11 @@ public class Merge implements Runnable {
                     topFive.add(maxString);
                     numberOfEntities++;
                 }
-                topFiveEntitiesDocs.put(postingPath+"/Corpus/Docs" + s + ".txt" , topFive);
+                topFiveEntitiesDocs.put(postingPath+"/Docs/" + s + ".txt" , topFive);
             }
            else if (copyHashDocEnt.size() >= 0)
             {
-                topFiveEntitiesDocs.put(postingPath+"/Corpus/Docs" + s + ".txt", new HashSet<>(copyHashDocEnt.keySet()));
+                topFiveEntitiesDocs.put(postingPath+"/Docs/" + s + ".txt", new HashSet<>(copyHashDocEnt.keySet()));
             }
            return topFiveEntitiesDocs;
     }

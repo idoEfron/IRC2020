@@ -79,7 +79,13 @@ public class Ranker {
         Pattern TAG_REGEX = Pattern.compile("<(.+?)>", Pattern.DOTALL);
         String posting ="";
         Map<String, Map<String, ArrayList<Integer>>> indexer = Indexer.getTermDictionary();
-        String path = (String)indexer.get(term).keySet().toArray()[0];
+        String path ="";
+        try{
+            path = (String)indexer.get(term).keySet().toArray()[0];
+        }
+        catch(Exception e){
+            System.out.println(term);
+        }
         int lineNum = indexer.get(term).get(indexer.get(term).keySet().toArray()[0]).get(1);
 
         // ******* reading specific line ********

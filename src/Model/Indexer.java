@@ -15,7 +15,7 @@ public class Indexer {
     private String postingPath;//todo ido add!!!!!!!!!!!!!!!!!!!!!!!!!!
     private File subFolderTerms;
     private File subFolderDocs;
-    //private static Semaphore mutex = new Semaphore(1);
+    private static Semaphore mutex = new Semaphore(1);
     private static double totalDocLength;
 
 
@@ -106,9 +106,11 @@ public class Indexer {
 
         //mutex.acquire();
         Map<String, Integer> docLength = p.getDocLength();
+        mutex.acquire();
         for(String docID : docLength.keySet()){
             totalDocLength = totalDocLength+docLength.get(docID);
         }
+        mutex.release();
         boolean createdFile;
         File file = null;
 
@@ -117,10 +119,11 @@ public class Indexer {
         PrintWriter writer=null;
 
         Map <Token,Map<String,ArrayList<String>>> termMap = p.getTermMap();
-        //Map<String,Set<String>> docListTopFive = p.getTopFiveEntitiesDocs();
         Set<Token> tknSet = termMap.keySet();
 
         Map <String ,List<String>> lines = new HashMap<>();
+
+        mutex.acquire();
 
         for (Token tkn : tknSet) {
 
@@ -131,12 +134,15 @@ public class Indexer {
                         termDictionary.get(tkn.getStr().toUpperCase()).put(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getStr().toLowerCase().charAt(0)+"_merged.txt",new ArrayList<>());
                         termDictionary.get(tkn.getStr().toUpperCase()).get(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getStr().toLowerCase().charAt(0)+"_merged.txt").add(0,sumTf(tkn.getStr(),termMap.get(tkn).entrySet()));
                         lineMap(tkn,lines,termMap);
+
                     }
                     else{
+
                         termDictionary.put(tkn.getStr().toLowerCase(),new HashMap<>());
                         termDictionary.get(tkn.getStr().toLowerCase()).put(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getStr().toLowerCase().charAt(0)+"_merged.txt",new ArrayList<>());
                         termDictionary.get(tkn.getStr().toLowerCase()).get(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getStr().toLowerCase().charAt(0)+"_merged.txt").add(0,sumTf(tkn.getStr(),termMap.get(tkn).entrySet()));
                         lineMap(tkn,lines,termMap);
+
                     }
                 }
                 else{
@@ -145,32 +151,41 @@ public class Indexer {
                         if(strA.length==2){
                             if(Character.isLetter(strA[1].charAt(0))){
                                 if(Character.isUpperCase(strA[1].charAt(0))){
+
                                     termDictionary.put(tkn.getStr().toUpperCase(),new HashMap<>());
                                     termDictionary.get(tkn.getStr().toUpperCase()).put(subFolderTerms.getPath()+"/"+"special/"+"special_merged.txt",new ArrayList<>());
                                     termDictionary.get(tkn.getStr().toUpperCase()).get(subFolderTerms.getPath()+"/"+"special/"+"special_merged.txt").add(0,sumTf(tkn.getStr(),termMap.get(tkn).entrySet()));
                                     lineMap(tkn,lines,termMap);
+
                                 }
                                 else{
+
                                     termDictionary.put(tkn.getStr().toLowerCase(),new HashMap<>());
                                     termDictionary.get(tkn.getStr().toLowerCase()).put(subFolderTerms.getPath()+"/"+"special/"+"special_merged.txt",new ArrayList<>());
                                     termDictionary.get(tkn.getStr().toLowerCase()).get(subFolderTerms.getPath()+"/"+"special/"+"special_merged.txt").add(0,sumTf(tkn.getStr(),termMap.get(tkn).entrySet()));
                                     lineMap(tkn,lines,termMap);
+
+
                                 }
                             }
                             else{
+
                                 termDictionary.put(tkn.getStr(),new HashMap<>());
                                 termDictionary.get(tkn.getStr()).put(subFolderTerms.getPath()+"/"+"special/"+"special_merged.txt",new ArrayList<>());
                                 termDictionary.get(tkn.getStr()).get(subFolderTerms.getPath()+"/"+"special/"+"special_merged.txt").add(0,sumTf(tkn.getStr(),termMap.get(tkn).entrySet()));
                                 lineMap(tkn,lines,termMap);
 
+
                             }
                         }
                     }
                     else{
+
                         termDictionary.put(tkn.getStr(),new HashMap<>());
                         termDictionary.get(tkn.getStr()).put(subFolderTerms.getPath()+"/"+"special/"+"special_merged.txt",new ArrayList<>());
                         termDictionary.get(tkn.getStr()).get(subFolderTerms.getPath()+"/"+"special/"+"special_merged.txt").add(0,sumTf(tkn.getStr(),termMap.get(tkn).entrySet()));
                         lineMap(tkn,lines,termMap);
+
                     }
                 }
             }
@@ -178,36 +193,52 @@ public class Indexer {
                 if(Character.isLetter(tkn.getStr().charAt(0))){
                     if(termDictionary.containsKey(tkn.getStr().toUpperCase())){
                         if(Character.isUpperCase(tkn.getStr().charAt(0))) {
+
                             //termDictionary.get(tkn.getStr().toUpperCase()).put(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getStr().toLowerCase().charAt(0)+"_merged.txt",new ArrayList<>());
                             termDictionary.get(tkn.getStr().toUpperCase()).get(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getStr().toLowerCase().charAt(0)+"_merged.txt").set(0,sumTf(tkn.getStr(),termMap.get(tkn).entrySet()));
                             lineMap(tkn,lines,termMap);
+
                         }
                         else{
+
                             //termDictionary.get(tkn.getStr().toUpperCase()).put(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getStr().toLowerCase().charAt(0)+"_merged.txt", new ArrayList<>());
                             termDictionary.get(tkn.getStr().toUpperCase()).get(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getStr().toLowerCase().charAt(0)+"_merged.txt").set(0,sumTf(tkn.getStr(),termMap.get(tkn).entrySet()));
-                            termDictionary.put(tkn.getStr().toLowerCase(),termDictionary.remove(tkn.getStr().toUpperCase()));
+                            Map<String, ArrayList<Integer>> map = termDictionary.remove(tkn.getStr().toUpperCase());
+                            termDictionary.put(tkn.getStr().toLowerCase(),map);
                             lineMap(tkn,lines,termMap);
+
                         }
+                    }
+                    else{
+                        termDictionary.get(tkn.getStr().toLowerCase()).get(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getStr().toLowerCase().charAt(0)+"_merged.txt").set(0,sumTf(tkn.getStr(),termMap.get(tkn).entrySet()));
+                        lineMap(tkn,lines,termMap);
+
                     }
                 }
                 else{
                     try{
                         if(tkn.getStr().contains("-")){
                             if(termDictionary.containsKey(tkn.getStr().toUpperCase())){
+
                                 //termDictionary.get(tkn.getStr().toUpperCase()).put(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getStr().toLowerCase().charAt(0)+"_merged.txt",new ArrayList<>());
                                 termDictionary.get(tkn.getStr().toUpperCase()).get(subFolderTerms.getPath()+"/"+"special/"+"special_merged.txt").set(0,sumTf(tkn.getStr(),termMap.get(tkn).entrySet()));
                                 lineMap(tkn,lines,termMap);
+
                             }
                             else{
+
                                 //termDictionary.get(tkn.getStr().toLowerCase()).put(subFolderTerms.getPath()+"/"+tkn.getStr().toLowerCase().charAt(0)+"/"+tkn.getStr().toLowerCase().charAt(0)+"_merged.txt",new ArrayList<>());
                                 termDictionary.get(tkn.getStr().toLowerCase()).get(subFolderTerms.getPath()+"/"+"special/"+"special_merged.txt").set(0,sumTf(tkn.getStr(),termMap.get(tkn).entrySet()));
                                 lineMap(tkn,lines,termMap);
+
                             }
                         }
                         else{
+
                             //termDictionary.get(tkn.getStr()).put(subFolderTerms.getPath()+"/"+"special/"+"special_merged.txt",new ArrayList<>());
                             termDictionary.get(tkn.getStr()).get(subFolderTerms.getPath()+"/"+"special/"+"special_merged.txt").set(0,sumTf(tkn.getStr(),termMap.get(tkn).entrySet()));
                             lineMap(tkn,lines,termMap);
+
                         }
                     }
                     catch(NullPointerException e){
@@ -215,8 +246,10 @@ public class Indexer {
                     }
                 }
             }
-            // mutex.release();
+           // mutex.release();
         }
+        mutex.release();
+
         for (String str:lines.keySet()){
             writeRaw(lines.get(str),str);
         }
@@ -232,22 +265,20 @@ public class Indexer {
                 if (!createdFile) {
                     throw new FilerException("cannot create file for indexer corpus" + docID);
                 }
-                //todo ido add
+                //todo ido add\
+                mutex.acquire();
                 Map <String,Set<String>> temp = new HashMap<>();
-                //temp.put(file.getPath(),docListTopFive.get(docID));
                 docDictionary.put(docID,temp);
+                mutex.release();
+
             }
 
             filewriter = new FileWriter(file, true);
             bw = new BufferedWriter(filewriter);
             writer = new PrintWriter(bw);
 
-            String topFive ="";
-//            for(String str: p.getTopFiveEntitiesDocs().get(docID)){
-//                topFive = topFive+"," +str;
-//            }
             // posting line format: maxTf,numOfUniqueWords,docLength,topFiveWord
-            writer.print(p.getMaxTf().get(docID) + "," + p.getWordCounter().get(docID) + ","+p.getDocLength().get(docID) +topFive);
+            writer.print(p.getMaxTf().get(docID) + "," + p.getWordCounter().get(docID) + ","+p.getDocLength().get(docID));
             writer.close();
         }
 

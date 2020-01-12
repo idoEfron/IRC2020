@@ -60,13 +60,11 @@ public class Parser {
         maxTf = new HashMap<>();
         termMap = new LinkedHashMap<>();
         stopwords = new HashSet<String>();
-        //topFiveEntitiesDocs = new HashMap<String, Set<String>>();
         entitiesPerDoc = new HashMap<>();
         if (rf.getSubFolder() == null) {
             fileName = "query";
         } else {
             fileName = rf.getSubFolder().get(0).getName();
-            //filePath = rf.getSubFolder().get(0).getPath();
         }
         months = new HashMap<String, String>() {{
             put("January", "01");
@@ -333,33 +331,6 @@ public class Parser {
                 }
             }
             wordCounter.put(docNo, termsInDoc.size());
-            //todo!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-//            if (entitiesPerDoc.size() > 5) {
-//                int numberOfEntities = 0;
-//                Set<String> topFive = new HashSet<>();
-//                while (numberOfEntities != 5) {
-//                    //int max = entitiesPerDoc.get(0);
-//                    Set<String> str = entitiesPerDoc.keySet();
-//                    String[] strArr = new String[entitiesPerDoc.keySet().size()];
-//                    strArr = str.toArray(strArr);
-//                    int max = entitiesPerDoc.get(strArr[0]);
-//                    String maxString = strArr[0];
-//                    for (int k = 1; k < strArr.length; k++) {
-//                        if (entitiesPerDoc.get(strArr[k]) > max) {
-//                            max = entitiesPerDoc.get(strArr[k]);
-//                            maxString = strArr[k];
-//                        }
-//                    }
-//                    entitiesPerDoc.remove(maxString);
-//                    topFive.add(maxString);
-//                    numberOfEntities++;
-//                }
-//                topFiveEntitiesDocs.put(docNo, topFive);
-//            }
-//            else if (entitiesPerDoc.size() >= 0)
-//            {
-//                topFiveEntitiesDocs.put(docNo, new HashSet<>(entitiesPerDoc.keySet()));
-//            }
             termsInDoc.clear();
         }//bracket on the for on the doc list's
         String postingPath = indexer.getPostingPath() + "/docEntities.txt";
@@ -370,14 +341,15 @@ public class Parser {
         }
         writer.flush();
         writer.close();
-        stopwords.clear();
         months.clear();
         mass.clear();
         electrical.clear();
         if (isQuery) {
             queryArray = new ArrayList<>();
             for (Token t : termMap.keySet()) {
-                queryArray.add(t.getStr());
+                if(!stopwords.contains(t.getStr().toLowerCase())){
+                    queryArray.add(t.getStr());
+                }
             }
         } else {
             indexer.addBlock(this);
@@ -890,6 +862,7 @@ public class Parser {
      */
     private void checkEntity(ArrayList<Token> tokens, int index, String docID, String date, String title, String fileName) throws InterruptedException {
         String entity = "";
+
         if (!stopwords.contains(tokens.get(index))) {
             while (tokens.size() > 0 && index < tokens.size() && tokens.get(index).getLength() > 0 && Character.isUpperCase(tokens.get(index).getStr().charAt(0))) {
                 if ((index + 1) < tokens.size() && tokens.get(index + 1).getLength() > 0 && Character.isUpperCase(tokens.get(index + 1).getStr().charAt(0))) {
@@ -909,6 +882,7 @@ public class Parser {
 
     //todo ido add!!!!!!!!!!!!!!!!!!1
     private void putTermEntity(String entity, String docID, String date, String title) throws InterruptedException {
+        mutex.acquire();
         if (entities.containsKey(entity.toUpperCase())) {
             if (entities.get(entity.toUpperCase()).containsKey(docID)) {
                 entities.get(entity.toUpperCase()).get(docID).set(0, String.valueOf(Integer.parseInt(entities.get(entity.toUpperCase()).get(docID).get(0)) + 1));
@@ -922,15 +896,10 @@ public class Parser {
                 entitiesPerDoc.get(docID).put(entity.toUpperCase(), "1");
             }
             if (this.indexer.getTermDictionary().containsKey(entity.toUpperCase())) {
-                // String str = entities.get(entity.toUpperCase()).get(docID).get(0);
-                //  entitiesPerDoc.put(entity.toUpperCase(), Integer.parseInt(entities.get(entity.toUpperCase()).get(docID).get(0)));
                 Map<String, ArrayList<String>> tempMap = entities.remove(entity.toUpperCase());
                 termMap.put(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName), entities.remove(entity.toUpperCase()));
 
             } else if (entities.get(entity.toUpperCase()).size() >= 2) {
-                //String str = entities.get(entity.toUpperCase()).get(docID).get(0);
-                //String num =  Integer.valueOf(entities.get(entity).get(docID).get(0));
-                //entitiesPerDoc.put(entity.toUpperCase(), Integer.parseInt(entities.get(entity.toUpperCase()).get(docID).get(0)));
                 termMap.put(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName), entities.remove(entity.toUpperCase()));
             }
         } else if (termMap.containsKey(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName)) && entity.split("[-:, ]").length > 1) {
@@ -945,22 +914,19 @@ public class Parser {
                 termMap.get(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName)).get(docID).add(0, "1");
                 termMap.get(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName)).get(docID).add(1, String.valueOf(Boolean.compare(title.contains(entity), false)));
                 termMap.get(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName)).get(docID).add(2, date);
-                //entitiesPerDoc.put(docID, new HashMap<>());
                 entitiesPerDoc.get(docID).put(entity.toUpperCase(), "1");
             }
         } else {
             if (entity.split("[-:, ]").length > 1) {
-                mutex.acquire();
                 entities.put(entity.toUpperCase(), new HashMap<String, ArrayList<String>>());
                 entities.get(entity.toUpperCase()).put(docID, new ArrayList<String>(3));
                 entities.get(entity.toUpperCase()).get(docID).add(0, "1");
                 entities.get(entity.toUpperCase()).get(docID).add(1, String.valueOf(Boolean.compare(title.contains(entity), false)));
                 entities.get(entity.toUpperCase()).get(docID).add(2, date);
-                //entitiesPerDoc.put(docID, new HashMap<>());
                 entitiesPerDoc.get(docID).put(entity.toUpperCase(), "1");
-                mutex.release();
             }
         }
+        mutex.release();
     }
 
     /**
@@ -1289,10 +1255,5 @@ public class Parser {
         this.wordCounter = wordCounter;
     }
 
-
-//    public Map<String, Set<String>> getTopFiveEntitiesDocs() {
-//        return topFiveEntitiesDocs;
-//    }
-//
 
 }

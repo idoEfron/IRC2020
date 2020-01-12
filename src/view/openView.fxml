@@ -113,7 +113,7 @@
                   <Font name="System Bold Italic" size="18.0" />
                </font>
             </Label>
-            <CheckBox layoutX="15.0" layoutY="300.0" mnemonicParsing="false" text="Enable data from Description">
+            <CheckBox fx:id="descripChoice" layoutX="15.0" layoutY="300.0" mnemonicParsing="false" text="Enable data from Description">
                <font>
                   <Font name="System Bold Italic" size="20.0" />
                </font></CheckBox>

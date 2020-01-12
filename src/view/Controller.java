@@ -51,6 +51,9 @@ public class Controller implements Initializable {
     private ObservableList<String> list = FXCollections.observableArrayList();
     @FXML
     private javafx.scene.control.CheckBox semanticCheckB;
+    @FXML
+    javafx.scene.control.CheckBox descripChoice;
+
     /**
      * this function start the program via the view panel
      *
@@ -161,6 +164,7 @@ public class Controller implements Initializable {
 
     /**
      * set the browser to the users wanted path in view panel
+     *
      * @param txt
      */
     private void browser(TextArea txt) {
@@ -170,25 +174,26 @@ public class Controller implements Initializable {
             txt.setText(selectedDirectory.getAbsolutePath());
         }
     }
+
     @FXML
     public void startQuery() throws IOException, ParseException, InterruptedException {
 
-        if(txtQueryPath.getText()==null||txtQueryPath.getText().equals("")){
+        if (txtQueryPath.getText() == null || txtQueryPath.getText().equals("")) {
             showAlert("please enter queries path");
             return;
         }
-        if(txtPosting.getText()==null||txtPosting.getText().equals("")){
+        if (txtPosting.getText() == null || txtPosting.getText().equals("")) {
             showAlert("no posting ");
             return;
         }
-        if(txtBrowse.getText()==null||txtBrowse.getText().equals("")){
+        if (txtBrowse.getText() == null || txtBrowse.getText().equals("")) {
             showAlert("no corpus ");
             return;
         }
         String path = txtQueryPath.getText();
         //Map<String,Map<String,Double>> finalDocs = viewModel.startQuery(path,txtBrowse.getText(),stemmerCheckB.isSelected(),semanticCheckB.isSelected());
-        List<String> outDisplay = viewModel.startQuery(path,txtBrowse.getText(),stemmerCheckB.isSelected(),semanticCheckB.isSelected());
-        if (outDisplay!=null &&outDisplay.size() > 0) {
+        List<String> outDisplay = viewModel.startQuery(path, txtBrowse.getText(), stemmerCheckB.isSelected(), semanticCheckB.isSelected(), descripChoice.isSelected());
+        if (outDisplay != null && outDisplay.size() > 0) {
             ObservableList<String> observableList = FXCollections.observableList(outDisplay);
             ListView listView = new ListView<>();
             listView.setItems(observableList);
@@ -200,41 +205,37 @@ public class Controller implements Initializable {
             window.setScene(scene);
             stage.setTitle("queries");
             window.show();
-            if(viewModel.getDocumentInQuery().size()>0&&viewModel.getDocumentInQuery()!=null){
+            if (viewModel.getDocumentInQuery().size() > 0 && viewModel.getDocumentInQuery() != null) {
                 comboBox.getItems().addAll(viewModel.getDocumentInQuery().stream().sorted().collect(Collectors.toList()));
             }
         } else {
             showAlert("There's nothing to display");
         }
     }
+
     @FXML
     public void displayTopFive() throws FileNotFoundException {
-        if(comboBox.getValue()!=null||comboBox.getValue().equals( "")){
+        if (comboBox.getValue() != null || comboBox.getValue().equals("")) {
             String strComo = comboBox.getValue();
-            if(txtPosting.getText()==null||txtPosting.getText().equals("")){
+            if (txtPosting.getText() == null || txtPosting.getText().equals("")) {
                 showAlert("please enter posting path");
-            }else{
-                if(stemmerCheckB.isSelected()){
-                    String path = txtPosting.getText() + "/StemmedCorpus/Docs/"+ strComo+ ".txt";
-                    readDoc(strComo, path);
-                }else{
-                    String path = txtPosting.getText() + "/Corpus/Docs/"+ strComo+ ".txt";
-                    readDoc(strComo, path);
-                }
+            } else {
+                String path = txtPosting.getText() + "docDictionary.txt";
+                readDoc(strComo, path);
             }
         }
     }
 
     private void readDoc(String strComo, String stemmerPath) throws FileNotFoundException {
         File topFiveStem = new File(stemmerPath);
-        if(topFiveStem.exists()){
+        if (topFiveStem.exists()) {
             Scanner sc = new Scanner(topFiveStem);
-            if(sc.hasNextLine()) {
+            if (sc.hasNextLine()) {
                 String line = sc.nextLine();
-                String [] lineArr = line.split(",");
-                String out = "top entities for the document "+ strComo + " are:";
-                for(int i =3 ; i<lineArr.length;i++){
-                    out = out +" " +  lineArr[i] + "\n";
+                String[] lineArr = line.split(",");
+                String out = "top entities for the document " + strComo + " are:";
+                for (int i = 3; i < lineArr.length; i++) {
+                    out = out + " " + lineArr[i] + "\n";
                 }
                 showAlert(out);
             }
@@ -243,27 +244,27 @@ public class Controller implements Initializable {
 
     @FXML
     public void startSingleQuery() throws IOException, ParseException, InterruptedException {
-        List<String > outDisplay = new LinkedList<>();
+        List<String> outDisplay = new LinkedList<>();
         String query = txtQuery.getText();
-        if(txtPosting.getText()==null){
+        if (txtPosting.getText() == null) {
             showAlert("no posting ");
             return;
 
         }
-        if(txtBrowse.getText()==null){
+        if (txtBrowse.getText() == null) {
             showAlert("no corpus ");
             return;
         }
-        if(txtQuery.getText()==null){
+        if (txtQuery.getText() == null) {
             showAlert("please enter query");
             return;
         }
-        if (!txtQuery.getText().contains("<num>")||!txtQuery.getText().contains("<title> ")){
+        if (!txtQuery.getText().contains("<num>") || !txtQuery.getText().contains("<title> ")) {
             showAlert("please enter correct query");
             return;
         }
-        outDisplay = viewModel.startSingleQuery(query,txtBrowse.getText(),stemmerCheckB.isSelected(),semanticCheckB.isSelected());
-        if (outDisplay!=null &&outDisplay.size() > 0) {
+        outDisplay = viewModel.startSingleQuery(query, txtBrowse.getText(), stemmerCheckB.isSelected(), semanticCheckB.isSelected(), descripChoice.isSelected());
+        if (outDisplay != null && outDisplay.size() > 0) {
             ObservableList<String> observableList = FXCollections.observableList(outDisplay);
             ListView listView = new ListView<>();
             listView.setItems(observableList);
@@ -275,7 +276,7 @@ public class Controller implements Initializable {
             window.setScene(scene);
             stage.setTitle("queries");
             window.show();
-            if(viewModel.getDocumentInQuery().size()>0&&viewModel.getDocumentInQuery()!=null){
+            if (viewModel.getDocumentInQuery().size() > 0 && viewModel.getDocumentInQuery() != null) {
                 comboBox.getItems().addAll(viewModel.getDocumentInQuery());
             }
         } else {
@@ -283,20 +284,22 @@ public class Controller implements Initializable {
         }
         //comboBox.getItems().addAll(comoList);
     }
+
     /**
      * this is a controller function to show the dictionary in view panel
+     *
      * @throws IOException
      */
     @FXML
     private void displayDictionary() throws IOException {
-        List<String > dictionary = new LinkedList<>();
+        List<String> dictionary = new LinkedList<>();
         File file = null;
         if (postPath != null) {
             file = new File(txtPosting.getText());
         }
         if (txtPosting.getText().length() > 0 && file != null) {
             dictionary = viewModel.displayDictionary(stemmerCheckB.isSelected(), txtPosting.getText());
-            if (dictionary!=null &&dictionary.size() > 0) {
+            if (dictionary != null && dictionary.size() > 0) {
                 ObservableList<String> observableList = FXCollections.observableList(dictionary);
                 ListView listView = new ListView<>();
                 listView.setItems(observableList);
@@ -318,6 +321,7 @@ public class Controller implements Initializable {
 
     /**
      * this function load the dictionary from hard disk via the view panel
+     *
      * @throws IOException
      */
 
@@ -338,6 +342,6 @@ public class Controller implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-    comboBox.setItems(list);
+        comboBox.setItems(list);
     }
 }
