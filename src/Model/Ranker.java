@@ -48,7 +48,7 @@ public class Ranker {
             double termScore = idf*(numerator/denominator);
             totalScore = totalScore + termScore;
         }
-        mutex.acquire();
+        mutex.release();
 
         return totalScore;
 
