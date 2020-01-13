@@ -20,7 +20,7 @@ public class ReadFile implements  Runnable{
     private Indexer index;
     private boolean stem;
     private String stopWordsPath;
-    private static Semaphore mutex;
+    private static Semaphore mutex = new Semaphore(1);
     private static int docs;
 
     /**
@@ -37,9 +37,6 @@ public class ReadFile implements  Runnable{
         index=i;
         stem = stemming;
         this.stopWordsPath = stopWordsPath;
-        if(mutex==null){
-            mutex = new Semaphore(1);
-        }
     }
 
     /**

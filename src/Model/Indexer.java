@@ -1,8 +1,4 @@
 package Model;
-
-
-import org.omg.PortableInterceptor.INACTIVE;
-
 import javax.annotation.processing.FilerException;
 import java.io.*;
 import java.util.*;
@@ -11,14 +7,16 @@ import java.util.concurrent.Semaphore;
 public class Indexer {
 
     private static Map<String, Map<String,ArrayList<Integer>>> termDictionary = new TreeMap<>();
-    private static HashMap<String, String> docDictionary = new HashMap<>();
+    private static HashMap<String,Map< String,Set<String>>> docDictionary = new HashMap<>();
     private String postingPath;//todo ido add!!!!!!!!!!!!!!!!!!!!!!!!!!
     private File subFolderTerms;
     private File subFolderDocs;
     private static Semaphore mutex = new Semaphore(1);
     private static double totalDocLength;
 
-    public static HashMap<String, String> getDocDictionary() {
+
+
+    public static HashMap<String, Map<String,Set<String>>> getDocDictionary() {
         return docDictionary;
     }
     public static double getTotalDocLength() {
@@ -89,6 +87,11 @@ public class Indexer {
      * todo ido add!!!!!!!!!!!!!!!!!!!!!!
      * @return
      */
+//    public String getPostingPath() {
+//        return postingPath;
+//    }
+
+
     public String getPostingPath() {
         return postingPath;
     }
@@ -102,13 +105,13 @@ public class Indexer {
      */
     public boolean addBlock(Parser p) throws IOException, InterruptedException {
 
+        mutex.acquire();
+
         //mutex.acquire();
         Map<String, Integer> docLength = p.getDocLength();
-        mutex.acquire();
         for(String docID : docLength.keySet()){
             totalDocLength = totalDocLength+docLength.get(docID);
         }
-        mutex.release();
         boolean createdFile;
         File file = null;
 
@@ -121,7 +124,6 @@ public class Indexer {
 
         Map <String ,List<String>> lines = new HashMap<>();
 
-        mutex.acquire();
 
         for (Token tkn : tknSet) {
 
@@ -246,7 +248,6 @@ public class Indexer {
             }
            // mutex.release();
         }
-        mutex.release();
 
         for (String str:lines.keySet()){
             writeRaw(lines.get(str),str);
@@ -263,23 +264,25 @@ public class Indexer {
                 if (!createdFile) {
                     throw new FilerException("cannot create file for indexer corpus" + docID);
                 }
-                mutex.acquire();
-                docDictionary.put(docID, file.getPath());
-                mutex.release();
+                //todo ido add\
+                Map <String,Set<String>> temp = new HashMap<>();
+                docDictionary.put(docID,temp);
+
             }
+
             filewriter = new FileWriter(file, true);
             bw = new BufferedWriter(filewriter);
             writer = new PrintWriter(bw);
 
-            String topFive ="";
-            for(String str: p.getTopFiveEntitiesDocs().get(docID)){
-                topFive = topFive+"," +str;
-            }
             // posting line format: maxTf,numOfUniqueWords,docLength,topFiveWord
-            writer.print(p.getMaxTf().get(docID) + "," + p.getWordCounter().get(docID) + ","+p.getDocLength().get(docID) +topFive);
+            writer.print(p.getMaxTf().get(docID) + "," + p.getWordCounter().get(docID) + ","+p.getDocLength().get(docID));
+            writer.flush();
             writer.close();
+            filewriter=null;
+            bw=null;
+            writer=null;
         }
-
+        mutex.release();
         return true;
     }
 
@@ -309,20 +312,19 @@ public class Indexer {
 
     private Integer sumTf(String term,Collection<Map.Entry<String,ArrayList<String>>> values) {
         Integer sum;
-        if((termDictionary.containsKey(term.toLowerCase()) && termDictionary.get(term.toLowerCase()).size()>0 && termDictionary.get(term.toLowerCase()).get(termDictionary.get(term.toLowerCase()).keySet().toArray()[0]).size()>0)){
-            sum = termDictionary.get(term.toLowerCase()).get(termDictionary.get(term.toLowerCase()).keySet().toArray()[0]).get(0);
-        }
-        if((termDictionary.containsKey(term.toUpperCase()) && termDictionary.get(term.toUpperCase()).size()>0 && termDictionary.get(term.toUpperCase()).get(termDictionary.get(term.toUpperCase()).keySet().toArray()[0]).size()>0)) {
-            if (Character.isLowerCase(term.charAt(0))) {
-                sum = termDictionary.get(term.toUpperCase()).get(termDictionary.get(term.toUpperCase()).keySet().toArray()[0]).get(0);
-            } else {
+            if((termDictionary.containsKey(term.toLowerCase()) && termDictionary.get(term.toLowerCase()).size()>0 && termDictionary.get(term.toLowerCase()).get(termDictionary.get(term.toLowerCase()).keySet().toArray()[0]).size()>0)){
+                sum = termDictionary.get(term.toLowerCase()).get(termDictionary.get(term.toLowerCase()).keySet().toArray()[0]).get(0);
+            }
+            else if((termDictionary.containsKey(term.toUpperCase()) && termDictionary.get(term.toUpperCase()).size()>0 && termDictionary.get(term.toUpperCase()).get(termDictionary.get(term.toUpperCase()).keySet().toArray()[0]).size()>0)) {
                 sum = termDictionary.get(term.toUpperCase()).get(termDictionary.get(term.toUpperCase()).keySet().toArray()[0]).get(0);
             }
+        else if((termDictionary.containsKey(term) && termDictionary.get(term).size()>0 && termDictionary.get(term).get(termDictionary.get(term).keySet().toArray()[0]).size()>0)) {
+            sum = termDictionary.get(term).get(termDictionary.get(term).keySet().toArray()[0]).get(0);
         }
-
         else{
             sum =0;
         }
+
         for(Map.Entry<String,ArrayList<String>> num:values){
             sum = sum+ Integer.parseInt(num.getValue().get(0));
         }
@@ -377,6 +379,10 @@ public class Indexer {
 
     }
 
+    public static void setDocDictionary(HashMap<String, Map<String, Set<String>>> docDictionary) {
+        Indexer.docDictionary = docDictionary;
+    }
+
     /**
      * this function is a setter that save the term Dictionary
      * @param termDictionary
@@ -384,8 +390,6 @@ public class Indexer {
     public static void setTermDictionary(Map<String, Map<String, ArrayList<Integer>>> termDictionary) {
         Indexer.termDictionary = termDictionary;
     }
-
-
     public static void setTotalDocLength(double totalDocLength) {
         Indexer.totalDocLength = totalDocLength;
     }

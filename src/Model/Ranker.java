@@ -4,17 +4,18 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.Semaphore;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 public class Ranker {
-    double b_factor;
-    double k_factor;
+    private double b_factor;
+    private double k_factor;
+    private static Semaphore mutex = new Semaphore(1);
 
     public Ranker(){
 
-        b_factor = 0.75;
+        b_factor = 0.3;
         k_factor = 1.2;
 
     }
@@ -31,20 +32,23 @@ public class Ranker {
         }
     }
 
-    public double score(List<String> query,String doc){
-
+    public double score(List<String> query, String doc, QueryRun queryRun) throws InterruptedException {
+        mutex.acquire();
         double totalScore =0;
         int numberOfDocs = ReadFile.getDocs();
         double avrgDocLength = Indexer.getTotalDocLength()/(double)numberOfDocs;
         int docLength = getDocLength(doc);
         for(String term: query){
-            double idf = getIDF(numberOfDocs,getDF(term));
-            double numerator = getTF(term,doc)*(k_factor+1);
+
+            int df = queryRun.getPostingLines().get(term).size();
+            double idf = getIDF(numberOfDocs,df);
+            double numerator = getTF(term,doc,queryRun)*(k_factor+1);
             double lengthDivision = docLength/avrgDocLength;
-            double denominator = getTF(term,doc) +(k_factor*(1-b_factor+b_factor*lengthDivision));
+            double denominator = getTF(term,doc, queryRun) +(k_factor*(1-b_factor+b_factor*lengthDivision));
             double termScore = idf*(numerator/denominator);
             totalScore = totalScore + termScore;
         }
+        mutex.acquire();
 
         return totalScore;
 
@@ -52,8 +56,8 @@ public class Ranker {
 
     private int getDocLength(String doc) {
         String posting ="";
-        HashMap<String, String> indexer = Indexer.getDocDictionary();
-        String path = indexer.get(doc);
+        HashMap<String, Map <String,Set<String>>> indexer = Indexer.getDocDictionary();
+        String path = (String) indexer.get(doc).keySet().toArray()[0];//todo ido change docdic
 
         // ******* reading first line ********
 
@@ -110,11 +114,11 @@ public class Ranker {
 
     private double getIDF(int numberOfDocs, int df) {
 
-        return Math.log((numberOfDocs-df+0.5)/(df+0.5));
+        return Math.log((numberOfDocs+1)/(df));
     }
 
-    public int getTF(String term,String doc){
-        List<String> tagValues = getPostingLine(term);
+    public int getTF(String term, String doc, QueryRun queryRun){
+        List<String> tagValues = queryRun.getPostingLines().get(term);
         for(String str: tagValues){
             if(str.startsWith(doc)){
                 String[] termInfo = str.split("\\|");

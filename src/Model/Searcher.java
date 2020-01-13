@@ -99,10 +99,8 @@ public class Searcher {
 
             ArrayList<String> descArray = new ArrayList<>();
             String desc ="";
-            if(description){
                 desc= "<TEXT>"+query.getDescription()+"</TEXT>";
                 descArray.add(desc);
-            }
             parser.parseDocs(descArray);
             query.setTokenDesc(new ArrayList<>(parser.getQueryArray()));
 
