@@ -21,7 +21,7 @@ public class Query {
     }
 
     public ArrayList<String> getTokenQuery() {
-        return tokenQuery;
+        return new ArrayList<>(tokenQuery);
     }
 
     public void setTokenQuery(ArrayList<String> tokenQuery) {

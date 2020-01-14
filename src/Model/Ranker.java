@@ -15,7 +15,7 @@ public class Ranker {
 
     public Ranker(){
 
-        b_factor = 0.3;
+        b_factor = 0.75;
         k_factor = 1.2;
 
     }
@@ -33,25 +33,35 @@ public class Ranker {
     }
 
     public double score(List<String> query, String doc, QueryRun queryRun) throws InterruptedException {
-        mutex.acquire();
+
         double totalScore =0;
         int numberOfDocs = ReadFile.getDocs();
         double avrgDocLength = Indexer.getTotalDocLength()/(double)numberOfDocs;
         int docLength = getDocLength(doc);
         for(String term: query){
+            int queryTF = getQueryTF(query,term);
 
             int df = queryRun.getPostingLines().get(term).size();
             double idf = getIDF(numberOfDocs,df);
-            double numerator = getTF(term,doc,queryRun)*(k_factor+1);
+            double numerator = ((double)getTF(term,doc,queryRun))*(k_factor+1);
             double lengthDivision = docLength/avrgDocLength;
-            double denominator = getTF(term,doc, queryRun) +(k_factor*(1-b_factor+b_factor*lengthDivision));
-            double termScore = idf*(numerator/denominator);
+            double denominator = ((double)getTF(term,doc, queryRun)) +(k_factor*(1-b_factor+b_factor*lengthDivision));
+            double termScore = ((double)2*queryTF)*idf*(numerator/denominator);
             totalScore = totalScore + termScore;
         }
-        mutex.release();
 
         return totalScore;
 
+    }
+
+    private int getQueryTF(List<String> query, String term) {
+        int tf =0;
+        for(String str: query){
+            if(str.equalsIgnoreCase(term)){
+                tf++;
+            }
+        }
+        return tf;
     }
 
     private int getDocLength(String doc) {
@@ -114,7 +124,7 @@ public class Ranker {
 
     private double getIDF(int numberOfDocs, int df) {
 
-        return Math.log((numberOfDocs+1)/(df));
+        return Math.log((numberOfDocs+1)/((double)df));
     }
 
     public int getTF(String term, String doc, QueryRun queryRun){

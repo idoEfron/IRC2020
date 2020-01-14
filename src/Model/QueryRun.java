@@ -61,20 +61,30 @@ public class QueryRun implements Runnable {
 
             if (semanticSelected) {
                 getRelevantDocsWithSemantics(queriesTokens, queryWithSemantic, indexedTerms, semanticSearcher, numOfResults, stem, isDescription);
+                getRelevantTermsWithDesc(queryWithSemantic, queriesTokens, stem, isDescription);
             }
 
-            List<String> queryToRank = queriesTokens.getTokenQuery();
+            ArrayList<String> result = new ArrayList<>(queriesTokens.getTokenQuery());
+            ArrayList<String> queryToRank = new ArrayList<>();
+            for(String qtr: result){
+                if(!result.contains(qtr.toLowerCase())){
+                    queryToRank.add(qtr.toLowerCase());
+                }
+                if(!result.contains(qtr.toUpperCase())){
+                    queryToRank.add(qtr.toUpperCase());
+                }
+            }
+
+            queryToRank.addAll(result);
             if (stem) {
-                List<String> stemmedQuery = new ArrayList<>();
+                ArrayList<String> stemmedQuery = new ArrayList<>();
                 for (String term : queryToRank) {
                     stemmedQuery.add(stemTerm(term));
                 }
                 queryToRank = stemmedQuery;
             }
 
-            if(isDescription){
-                getRelevantTermsWithDesc(queryToRank, queriesTokens, stem, isDescription);
-            }
+
 
             queryToRank.retainAll(indexedTerms);
             getRelevantDocs(queryToRank, retrievedDocs);
@@ -90,11 +100,31 @@ public class QueryRun implements Runnable {
     }
 
     private void getRelevantTermsWithDesc(List<String> query, Query queriesTokens, boolean stem, boolean isDescription) {
+        //remove garbage terms
+        ArrayList<String> garbage = new ArrayList<>();
+        garbage.add("DESCRIPTION");
+        garbage.add("DESCRIPTION".toLowerCase());
+        garbage.add("available");
+        garbage.add("documents");
+        garbage.add("document");
+        garbage.add("discuss");
+        garbage.add("discussing");
+        garbage.add("regarding");
+        garbage.add("regard");
+        garbage.add("find");
+        garbage.add("find".toUpperCase());
+        garbage.add("provide");
+        garbage.add("identify");
+        garbage.add("identify".toUpperCase());
+
+
             ArrayList<String> descSemantic = new ArrayList<>();
             ArrayList<String> descSet = queriesTokens.getTokenDesc();
             for (String desc : descSet) {
-                if (stem) {
-                    desc = stemTerm(desc);
+                if(!garbage.contains(desc)){
+                    if (stem) {
+                        desc = stemTerm(desc);
+                    }
                 }
                 descSemantic.add(desc);
                 //descSemantic.add(desc.toLowerCase());
