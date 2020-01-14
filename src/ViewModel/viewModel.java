@@ -9,6 +9,7 @@ import snowball.ext.porterStemmer;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -93,6 +94,12 @@ public class viewModel {
 
         while (!executor.isTerminated()) {
         }
+
+        File stopWords = new File(corpusPath+"/"+"stop_words.txt");
+        File dest = new File(postPath+"/"+stopWords.getName());
+        dest.createNewFile();
+        Files.copy(stopWords.toPath(),dest.toPath() , StandardCopyOption.REPLACE_EXISTING);
+
         File fileDocs = new File(postPath + "/docsEnts");
         File[] fileArr = fileDocs.listFiles();
         Merge merge = new Merge(fileDocs.listFiles(), true);
@@ -307,9 +314,17 @@ public class viewModel {
             String[] term = st.split(">");
             if (term.length == 4) {
                 termDictionary.put(term[0], new HashMap<>());
-                termDictionary.get(term[0]).put(term[1], new ArrayList<>());
-                termDictionary.get(term[0]).get(term[1]).add(0, Integer.parseInt(term[2]));
-                termDictionary.get(term[0]).get(term[1]).add(1, Integer.parseInt(term[3]));
+                String word = term[1].substring(term[1].lastIndexOf('/')+1,term[1].lastIndexOf("_"));
+                String path = "";
+                if(selected){
+                    path = postPath+"/StemmedCorpus/Terms/"+word+term[1].substring(term[1].lastIndexOf('/'));
+                }
+                else{
+                    path = postPath+"/Corpus/Terms/"+word+term[1].substring(term[1].lastIndexOf('/'));
+                }
+                termDictionary.get(term[0]).put(path, new ArrayList<>());
+                termDictionary.get(term[0]).get(path).add(0, Integer.parseInt(term[2]));
+                termDictionary.get(term[0]).get(path).add(1, Integer.parseInt(term[3]));
             }
         }
         index.setTermDictionary(termDictionary);
@@ -320,14 +335,22 @@ public class viewModel {
         HashMap<String, Map<String, Set<String>>> docDictionary = new HashMap<>();
         while ((strDoc = brDoc.readLine()) != null) {
             String[] term = strDoc.split(">");
+            String word = term[1].substring(term[1].lastIndexOf('/')+1);
+            String path = "";
+            if(selected){
+                path = postPath+"/StemmedCorpus/Docs/"+word;
+            }
+            else{
+                path = postPath+"/Corpus/Docs/"+word;
+            }
             docDictionary.put(term[0], new HashMap<>());
-            docDictionary.get(term[0]).put(term[1], new HashSet<>());
+            docDictionary.get(term[0]).put(path, new HashSet<>());
             String set = term[2];
             set = set.replaceAll("\\[", "");
             set = set.replaceAll("]", "");
             String[] setArr = set.split(",");
             for (int i = 0; i < setArr.length; i++) {
-                docDictionary.get(term[0]).get(term[1]).add(setArr[i]);
+                docDictionary.get(term[0]).get(path).add(setArr[i]);
             }
         }
         index.setDocDictionary(docDictionary);

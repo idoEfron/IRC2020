@@ -1,5 +1,6 @@
 package Model;
 
+import ViewModel.viewModel;
 import snowball.ext.porterStemmer;
 
 import java.io.*;
@@ -177,7 +178,13 @@ public class Parser {
         //String fileName = "stopwords.txt";
         ClassLoader classLoader = ClassLoader.getSystemClassLoader();
         if (this.stopwords.size() == 0) {
-            File stopWordsFile = new File(stopWordsPath + "/stop_words.txt");/****************////////////////
+            File stopWordsFile = null;
+            if(isQuery){
+                stopWordsFile = new File(viewModel.getPostPath() + "/stop_words.txt");
+            }
+            else{
+                stopWordsFile = new File(stopWordsPath + "/stop_words.txt");/****************////////////////
+            }
             String stopContent = new String(Files.readAllBytes(stopWordsFile.toPath()));
             String stopLines[] = stopContent.split("\\r?\\n");
             stopwords.addAll(Arrays.asList(stopLines));
