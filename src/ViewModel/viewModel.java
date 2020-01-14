@@ -4,7 +4,6 @@ import Model.*;
 import Model.Merge;
 import Model.ReadFile;
 import com.medallia.word2vec.Word2VecModel;
-import snowball.ext.porterStemmer;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -372,34 +371,35 @@ public class viewModel {
         Searcher searcher = new Searcher(path, stopWordsPath, stem, isDescription);
         List<Query> queryList = searcher.readQuery();
         Map<String, Map<String, Double>> docsRanks = new HashMap<>();
-        Word2VecModel model = Word2VecModel.fromTextFile(new File("resources/word2vec.c.output.model.txt"));
-        com.medallia.word2vec.Searcher semanticSearcher = model.forSearch();
-
-        ExecutorService executor = Executors.newFixedThreadPool(4);
-        for (Query query : queryList) {
-            QueryRun queryRun = new QueryRun(query, docsRanks, semanticSelected, stem, isDescription, semanticSearcher);
-            executor.execute(new Thread(queryRun));
-        }
-        executor.shutdown();
-        while (!executor.isTerminated()) {
-        }
+        searcher.relevantDocs(docsRanks,queryList,semanticSelected);
+//        Word2VecModel model = Word2VecModel.fromTextFile(new File("resources/word2vec.c.output.model.txt"));
+//        com.medallia.word2vec.Searcher semanticSearcher = model.forSearch();
+//
+//        ExecutorService executor = Executors.newFixedThreadPool(4);
+//        for (Query query : queryList) {
+//            QueryRun queryRun = new QueryRun(query, docsRanks, semanticSelected, stem, isDescription, semanticSearcher);
+//            executor.execute(new Thread(queryRun));
+//        }
+//        executor.shutdown();
+//        while (!executor.isTerminated()) {
+//        }
 
         //writeToResultFile(docsRanks);
 
         this.docsRanks = docsRanks;
 
-        return displayQueries(docsRanks);
+        return displayQueries(docsRanks,searcher);
     }
 
-    private LinkedList<String> displayQueries(Map<String, Map<String, Double>> docsRanks) {
+    private LinkedList<String> displayQueries(Map<String, Map<String, Double>> docsRanks, Searcher searcher) {
         this.topFifty = new TreeMap<>();
         LinkedList<String> display = new LinkedList<>();
         int num = 0;
         for (String s : docsRanks.keySet()) {
             String str = "";
             display.add("For query number " + s + " the most fifty or less documents are:" + "\n");
-            this.topFifty.put(s, topFifty(docsRanks.get(s)));
-            Set<String> topfifty = topFifty(docsRanks.get(s)).keySet();
+            this.topFifty.put(s, searcher.topFifty(docsRanks.get(s)));
+            Set<String> topfifty = searcher.topFifty(docsRanks.get(s)).keySet();
             for (String docStr : topfifty) {
                 documentInQuery.add(docStr);
                 str = str + "," + docStr;
@@ -422,16 +422,16 @@ public class viewModel {
         Query singleQuery = searcher.startSingleQuery();
 
         Map<String, Map<String, Double>> docsRanks = new HashMap<>();
-        Word2VecModel model = Word2VecModel.fromTextFile(new File("resources/word2vec.c.output.model.txt"));
-        com.medallia.word2vec.Searcher semanticSearcher = model.forSearch();
-        QueryRun queryRun = new QueryRun(singleQuery, docsRanks, semanticSelected, stem, isDescription, semanticSearcher);
-        queryRun.run();
+        searcher.singleQueryRank(singleQuery,docsRanks,semanticSelected);
+//        Word2VecModel model = Word2VecModel.fromTextFile(new File("resources/word2vec.c.output.model.txt"));
+//        com.medallia.word2vec.Searcher semanticSearcher = model.forSearch();
+//        QueryRun queryRun = new QueryRun(singleQuery, docsRanks, semanticSelected, stem, isDescription, semanticSearcher);
+//        queryRun.run();
         //docsRanks.put(singleQuery.getNumOfQuery(), getAllRankedDocs(singleQuery, semanticSelected, stem, isDescription));
 
         //writeToResultFile(docsRanks);
         this.docsRanks = docsRanks;
-
-        return displayQueries(docsRanks);
+        return displayQueries(docsRanks, searcher);
     }
 
     public void writeToResultFile(String path) throws IOException {
@@ -457,32 +457,32 @@ public class viewModel {
         return documentInQuery;
     }
 
-    private Map<String, Double> topFifty(Map<String, Double> docRanked) {
-        Map<String, Double> docRankCopy = new HashMap<>(docRanked);
-        if (docRanked.size() > 50) {
-            int numberOfdocs = 0;
-            Map<String, Double> topFifty = new HashMap<>();
-            while (numberOfdocs != 50) {
-                //int max = entitiesPerDoc.get(0);
-                Set<String> str = docRankCopy.keySet();
-                String[] strArr = new String[docRankCopy.keySet().size()];
-                strArr = str.toArray(strArr);
-                double max = docRankCopy.get(strArr[0]);
-                String maxString = strArr[0];
-                for (int k = 1; k < strArr.length; k++) {
-                    if (docRankCopy.get(strArr[k]) > max) {
-                        max = docRankCopy.get(strArr[k]);
-                        maxString = strArr[k];
-                    }
-                }
-                docRankCopy.remove(maxString);
-                topFifty.put(maxString, max);
-                numberOfdocs++;
-            }
-            return topFifty;
-        } else if (docRankCopy.keySet().size() >= 0) {
-            return docRanked;
-        }
-        return null;
-    }
+//    private Map<String, Double> topFifty(Map<String, Double> docRanked) {
+//        Map<String, Double> docRankCopy = new HashMap<>(docRanked);
+//        if (docRanked.size() > 50) {
+//            int numberOfdocs = 0;
+//            Map<String, Double> topFifty = new HashMap<>();
+//            while (numberOfdocs != 50) {
+//                //int max = entitiesPerDoc.get(0);
+//                Set<String> str = docRankCopy.keySet();
+//                String[] strArr = new String[docRankCopy.keySet().size()];
+//                strArr = str.toArray(strArr);
+//                double max = docRankCopy.get(strArr[0]);
+//                String maxString = strArr[0];
+//                for (int k = 1; k < strArr.length; k++) {
+//                    if (docRankCopy.get(strArr[k]) > max) {
+//                        max = docRankCopy.get(strArr[k]);
+//                        maxString = strArr[k];
+//                    }
+//                }
+//                docRankCopy.remove(maxString);
+//                topFifty.put(maxString, max);
+//                numberOfdocs++;
+//            }
+//            return topFifty;
+//        } else if (docRankCopy.keySet().size() >= 0) {
+//            return docRanked;
+//        }
+//        return null;
+//    }
 }

@@ -1,12 +1,15 @@
 package Model;
 
+import com.medallia.word2vec.Word2VecModel;
+
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Searcher {
     private Parser parser;
@@ -177,6 +180,55 @@ public class Searcher {
 
     public boolean isStem() {
         return stem;
+    }
+
+    public void relevantDocs(Map<String, Map<String, Double>> docsRanks, List<Query> queryList, boolean semanticSelected) throws IOException {
+        Word2VecModel model = Word2VecModel.fromTextFile(new File("resources/word2vec.c.output.model.txt"));
+        com.medallia.word2vec.Searcher semanticSearcher = model.forSearch();
+        ExecutorService executor = Executors.newFixedThreadPool(4);
+        for (Query query : queryList) {
+            QueryRun queryRun = new QueryRun(query, docsRanks, semanticSelected, stem, description, semanticSearcher);
+            executor.execute(new Thread(queryRun));
+        }
+        executor.shutdown();
+        while (!executor.isTerminated()) {
+        }
+    }
+
+    public Map<String, Double> topFifty(Map<String, Double> docRanked) {
+        Map<String, Double> docRankCopy = new HashMap<>(docRanked);
+        if (docRanked.size() > 50) {
+            int numberOfdocs = 0;
+            Map<String, Double> topFifty = new HashMap<>();
+            while (numberOfdocs != 50) {
+                //int max = entitiesPerDoc.get(0);
+                Set<String> str = docRankCopy.keySet();
+                String[] strArr = new String[docRankCopy.keySet().size()];
+                strArr = str.toArray(strArr);
+                double max = docRankCopy.get(strArr[0]);
+                String maxString = strArr[0];
+                for (int k = 1; k < strArr.length; k++) {
+                    if (docRankCopy.get(strArr[k]) > max) {
+                        max = docRankCopy.get(strArr[k]);
+                        maxString = strArr[k];
+                    }
+                }
+                docRankCopy.remove(maxString);
+                topFifty.put(maxString, max);
+                numberOfdocs++;
+            }
+            return topFifty;
+        } else if (docRankCopy.keySet().size() >= 0) {
+            return docRanked;
+        }
+        return null;
+    }
+
+    public void singleQueryRank(Query singleQuery, Map<String, Map<String, Double>> docsRanks, boolean semanticSelected) throws IOException {
+        Word2VecModel model = Word2VecModel.fromTextFile(new File("resources/word2vec.c.output.model.txt"));
+        com.medallia.word2vec.Searcher semanticSearcher = model.forSearch();
+        QueryRun queryRun = new QueryRun(singleQuery, docsRanks, semanticSelected, stem, description, semanticSearcher);
+        queryRun.run();
     }
 }
 
