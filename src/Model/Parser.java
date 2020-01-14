@@ -1275,5 +1275,7 @@ public class Parser {
         this.wordCounter = wordCounter;
     }
 
-
+    public static void cleanEntities(){
+        entities.clear();
+    }
 }

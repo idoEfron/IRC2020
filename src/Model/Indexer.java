@@ -382,7 +382,9 @@ public class Indexer {
     public static void setDocDictionary(HashMap<String, Map<String, Set<String>>> docDictionary) {
         Indexer.docDictionary = docDictionary;
     }
-
+    public static void clearDocdic(){
+        docDictionary.clear();
+    }
     /**
      * this function is a setter that save the term Dictionary
      * @param termDictionary

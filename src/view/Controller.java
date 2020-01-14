@@ -317,8 +317,9 @@ public class Controller implements Initializable {
             }
             viewModel.writeToResultFile(path);
             showAlert("Result have neen saved!!:)");
+        }else {
+            showAlert("please select correct path");
         }
-        showAlert("please select correct path");
     }
     /**
      * this is a controller function to show the dictionary in view panel
