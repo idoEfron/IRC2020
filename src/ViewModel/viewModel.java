@@ -9,6 +9,7 @@ import snowball.ext.porterStemmer;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -93,6 +94,12 @@ public class viewModel {
 
         while (!executor.isTerminated()) {
         }
+
+        File stopWords = new File(corpusPath+"/"+"stop_words.txt");
+        File dest = new File(postPath+"/"+stopWords.getName());
+        dest.createNewFile();
+        Files.copy(stopWords.toPath(),dest.toPath() , StandardCopyOption.REPLACE_EXISTING);
+
         File fileDocs = new File(postPath + "/docsEnts");
         File [] fileArr = fileDocs.listFiles();
         Merge merge = new Merge(fileDocs.listFiles(),true);
