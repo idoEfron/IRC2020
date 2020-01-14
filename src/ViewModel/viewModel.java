@@ -49,7 +49,7 @@ public class viewModel {
         Indexer.setTotalDocLength(0);
         File[] files1 = null;
         File folder = new File(corpusPath);
-        ExecutorService executor = Executors.newFixedThreadPool(4);
+        ExecutorService executor = Executors.newFixedThreadPool(1);
 
         if (stem) {
             createFolders(postPath, "StemmedCorpus");
@@ -81,7 +81,7 @@ public class viewModel {
             }
         }
 
-        executor = Executors.newFixedThreadPool(4);
+        executor = Executors.newFixedThreadPool(1);
         for (File file : subFolderTerms.listFiles()) {
             if (file.isDirectory()) {
                 Merge merge = new Merge(file.listFiles(),false);

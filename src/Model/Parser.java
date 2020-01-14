@@ -1052,7 +1052,7 @@ public class Parser {
             if (Character.isUpperCase(current.charAt(0))) {
                 checkEntity(tokens, index, docID, date, title, fileName);
                 Token currTok = new Token(current.toLowerCase(), docID, date, title.contains(current.toLowerCase()), fileName);
-                if (termMap.containsKey(currTok.getStr().toLowerCase())) {
+                if (termMap.containsKey(currTok)) {
                     putTermString(current.toLowerCase(), docID, stemming, date, title);
                     return true;
                 } else if (termMap.containsKey(new Token(current.toUpperCase(), docID, date, title.contains(current.toUpperCase()), fileName))) {
