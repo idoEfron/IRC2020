@@ -372,7 +372,6 @@ public class viewModel {
         Searcher searcher = new Searcher(path, stopWordsPath, stem, isDescription);
         List<Query> queryList = searcher.readQuery();
         Map<String, Map<String, Double>> docsRanks = new HashMap<>();
-
         Word2VecModel model = Word2VecModel.fromTextFile(new File("resources/word2vec.c.output.model.txt"));
         com.medallia.word2vec.Searcher semanticSearcher = model.forSearch();
 
