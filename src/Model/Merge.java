@@ -36,11 +36,6 @@ public class Merge implements Runnable {
         List<String> mergedText = new ArrayList<>();
         String parent = files[0].getParent();
         File temp = new File(files[0].getParent());
-        //String posting = new File(temp.getParent()).getParent();
-        //String postingPath = new File(posting).getParent();
-
-        //  File docEntities = new File(postingPath + "/" + "docEntities.txt");
-        // uploadMap(posting,docEntities, newIndex);
         File docInfo = new File(viewModel.getPostPath() + "/" + "corpusInfo.txt");
         if (!docInfo.exists()) {
             saveNumDocsAndDocLength(viewModel.getPostPath(), ReadFile.getDocs(), Indexer.getTotalDocLength());
@@ -115,7 +110,15 @@ public class Merge implements Runnable {
 
     }
 
-    //todo ido add
+
+    /**
+     * this function save the corpus info that contain the number of documents and the total document length
+     * @param postingPath the posting path to the posting files
+     * @param docs the number of documents in the corpus
+     * @param totalDocLength the  total document length
+     * @throws IOException
+     * @throws InterruptedException
+     */
     private void saveNumDocsAndDocLength(String postingPath, int docs, double totalDocLength) throws IOException, InterruptedException {
         PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(postingPath + "/" + "corpusInfo.txt", true)));
         writer.append(docs + ">" + totalDocLength);
@@ -124,76 +127,11 @@ public class Merge implements Runnable {
         writer = null;
     }
 
-    //todo ido add
-//    private void uploadMap(String posting,File docEntities, Map<String, Map<String, ArrayList<Integer>>> newIndex) throws IOException {
-//        if (docEntities.exists()) {
-//            List<String> doctxt = Files.readAllLines(docEntities.toPath(), StandardCharsets.UTF_8);
-//            docEntities.delete();
-//            HashMap<String, Map<String, String>> hashDocEnt = new HashMap<>();
-//            for (int i = 0; i < doctxt.size(); i++) {
-//                String[] strArr = doctxt.get(i).split(">");
-//                hashDocEnt.put(strArr[0], new HashMap<>());
-//                String map = strArr[1].replaceAll("\\{", "");
-//                map = map.replaceAll("}", "");
-//                if (map.contains(",")) {
-//                    String[] split = map.split(", ");
-//                    for (String s : split) {
-//                        try {
-//                            if (s.contains("=")) {
-//                                String[] value = s.split("=");
-//                                hashDocEnt.get(strArr[0]).put(value[0], value[1]);
-//                            }
-//                        } catch (ArrayIndexOutOfBoundsException e) {
-//                            System.out.println(strArr[0]);
-//                        }
-//                    }
-//                }
-//            }
-//            HashMap<String,Map< String,Set<String>>> docDictionary = new HashMap<>();
-//            if (hashDocEnt.size() > 0) {
-//                for (String s:hashDocEnt.keySet()) {
-//                    hashDocEnt.get(s).keySet().retainAll(newIndex.keySet());
-//                    docDictionary.put(s,new HashMap<>());
-//                   // selectTopFive(s,postingPath,hashDocEnt.get(s));
-//                    docDictionary.put(s,selectTopFive(s,posting,hashDocEnt.get(s)));
-//                }
-//                Indexer.setDocDictionary(docDictionary);
-//            }
-//
-//        }
-//    }
-//    public Map<String,Set<String>> selectTopFive(String s,String postingPath, Map<String, String> hashDocEnt){
-//        Map<String, String> copyHashDocEnt = new HashMap<>(hashDocEnt);
-//        Map<String,Set<String>> topFiveEntitiesDocs = new HashMap<>();
-//        if (hashDocEnt.size() > 5) {
-//                int numberOfEntities = 0;
-//                Set<String> topFive = new HashSet<>();
-//                while (numberOfEntities != 5) {
-//                    //int max = entitiesPerDoc.get(0);
-//                    Set<String> str = copyHashDocEnt.keySet();
-//                    String[] strArr = new String[copyHashDocEnt.keySet().size()];
-//                    strArr = str.toArray(strArr);
-//                    int max = Integer.parseInt(copyHashDocEnt.get(strArr[0]));
-//                    String maxString = strArr[0];
-//                    for (int k = 1; k < strArr.length; k++) {
-//                        if (Integer.parseInt(copyHashDocEnt.get(strArr[k])) > max) {
-//                            max = Integer.parseInt(copyHashDocEnt.get(strArr[k]));
-//                            maxString = strArr[k];
-//                        }
-//                    }
-//                    copyHashDocEnt.remove(maxString);
-//                    topFive.add(maxString);
-//                    numberOfEntities++;
-//                }
-//                topFiveEntitiesDocs.put(postingPath+"/Docs/" + s + ".txt" , topFive);
-//            }
-//           else if (copyHashDocEnt.size() >= 0)
-//            {
-//                topFiveEntitiesDocs.put(postingPath+"/Docs/" + s + ".txt", new HashSet<>(copyHashDocEnt.keySet()));
-//            }
-//           return topFiveEntitiesDocs;
-//    }
-
+    /**
+     * this function
+     * @param mergedText
+     * @param newIndex
+     */
     private void documentLines(List<String> mergedText, Map<String, Map<String, ArrayList<Integer>>> newIndex) {
         for (int i = 0; i < mergedText.size(); i++) {
             try{

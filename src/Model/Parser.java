@@ -31,11 +31,16 @@ public class Parser {
     private boolean isQuery;
     private String fileName;
     private Map<String, Map<String, String>> entitiesPerDoc;
-    private static  int blockNum = 0;
+    private static int blockNum = 0;
     //private Map<String, Set<String>> topFiveEntitiesDocs;
     private Map<String, Integer> docLength;
     private static Semaphore mutex = new Semaphore(1);
 
+    /**
+     * this function get the total length of a
+     *
+     * @return
+     */
     public Map<String, Integer> getDocLength() {
         return docLength;
     }
@@ -179,10 +184,9 @@ public class Parser {
         ClassLoader classLoader = ClassLoader.getSystemClassLoader();
         if (this.stopwords.size() == 0) {
             File stopWordsFile = null;
-            if(isQuery){
+            if (isQuery) {
                 stopWordsFile = new File(viewModel.getPostPath() + "/stop_words.txt");
-            }
-            else{
+            } else {
                 stopWordsFile = new File(stopWordsPath + "/stop_words.txt");/****************////////////////
             }
             String stopContent = new String(Files.readAllBytes(stopWordsFile.toPath()));
@@ -348,15 +352,15 @@ public class Parser {
         mutex.acquire();
         blockNum++;
 
-        if (isQuery==false) {
+        if (isQuery == false) {
 
             List<String> lines = new ArrayList<>();
-            String postingPath = indexer.getPostingPath() + "/docsEnts" + "/" + blockNum +".txt";
+            String postingPath = indexer.getPostingPath() + "/docsEnts" + "/" + blockNum + ".txt";
             for (String docsId : entitiesPerDoc.keySet()) {
                 String ent = entitiesPerDoc.get(docsId).toString();
                 lines.add(docsId + " : " + ent);
             }
-            Merge.writeRaw(lines,postingPath);
+            Merge.writeRaw(lines, postingPath);
             lines.clear();
         }
         mutex.release();
@@ -377,10 +381,23 @@ public class Parser {
         }
     }
 
+    /**
+     * this function is a getter that return the query array of the query
+     *
+     * @return the query array
+     */
     public ArrayList<String> getQueryArray() {
         return queryArray;
     }
 
+    /**
+     * this function add a measure to a representation of a number
+     *
+     * @param addTo      the representation of the number
+     * @param tokenToAdd the number that needed to be added
+     * @return the final concatenate string
+     * @throws ParseException
+     */
     private String addMeasure(String addTo, String tokenToAdd) throws ParseException {
         if (tokenToAdd.contains("-")) {
             String[] arrTokens = tokenToAdd.split("-");
@@ -415,6 +432,13 @@ public class Parser {
         return tokenToAdd;
     }
 
+    /**
+     * this function check if a string contain - abd if in both side is a number
+     *
+     * @param currToken the string that needed to br checked
+     * @return if the string contain "-"
+     * @throws ParseException
+     */
     private boolean checkBetween(String currToken) throws ParseException {
         if (currToken.contains("-")) {
             String[] arrTokens = currToken.split("-");
@@ -449,6 +473,13 @@ public class Parser {
         }
     }
 
+    /**
+     * check if a string is a number in both sides
+     *
+     * @param currToken that need to be checked
+     * @return true or false  if a string is a number in both sides
+     * @throws ParseException
+     */
     private boolean isBothNumber(String currToken) throws ParseException {
         if (currToken.contains("-")) {
             String[] arrTokens = currToken.split("-");
@@ -505,7 +536,7 @@ public class Parser {
      * this function is cleaning the token
      *
      * @param token that needed to be clean
-     * @return
+     * @return the token after cleaning
      */
     protected String cleanToken(String token) {
         if (token.length() > 0 && checkChar(token.charAt(0)) == false) {
@@ -528,7 +559,7 @@ public class Parser {
      * this function check if the char is a comma
      *
      * @param charAt
-     * @return
+     * @return if a char is a character in specific way
      */
     private boolean checkChar(char charAt) {
         return ((charAt >= 65 && charAt <= 90) || (charAt >= 97 && charAt <= 122) ||
@@ -541,8 +572,8 @@ public class Parser {
     /**
      * checks if the input number is indeed a number
      *
-     * @param str
-     * @return
+     * @param str the string that needing to be checked
+     * @return true or false if the str is a number
      * @throws ParseException
      */
     public boolean isNumber(String str) throws ParseException {
@@ -768,6 +799,12 @@ public class Parser {
         return false;
     }
 
+    /**
+     * @param num the string that needed to be converted to number
+     * @param current
+     * @return the concatenate string
+     * @throws ParseException
+     */
     private String convertToNum(String num, String current) throws ParseException {
 
 
@@ -902,6 +939,15 @@ public class Parser {
     }
 
     //todo ido add!!!!!!!!!!!!!!!!!!1
+
+    /**
+     * this function put a term and classify it as a Entity
+     * @param entity the string that represent the entity
+     * @param docID the docid of the term
+     * @param date the date of the document
+     * @param title the title of the document
+     * @throws InterruptedException
+     */
     private void putTermEntity(String entity, String docID, String date, String title) throws InterruptedException {
         mutex.acquire();
         if (entities.containsKey(entity.toUpperCase())) {
@@ -937,9 +983,8 @@ public class Parser {
                     termMap.get(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName)).get(docID).add(2, date);
                     entitiesPerDoc.get(docID).put(entity.toUpperCase(), "1");
                 }
-            }
-            catch(Exception e){
-                System.out.println("problem in term: " +entity + "in map: " +termMap.get(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName)));
+            } catch (Exception e) {
+                System.out.println("problem in term: " + entity + "in map: " + termMap.get(new Token(entity.toUpperCase(), docID, date, title.contains(entity), fileName)));
             }
         } else {
             if (entity.split("[-:, ]").length > 1) {
@@ -1079,10 +1124,6 @@ public class Parser {
                     return true;
                 }
             }
-            /*else {
-                putTermString(current, docID, stemming,date, title);
-                return true;
-            }*/
         }
         if (stopwords.contains(current.toLowerCase())) {
             String newStopWord = current;
@@ -1282,7 +1323,10 @@ public class Parser {
         this.wordCounter = wordCounter;
     }
 
-    public static void cleanEntities(){
+    /**
+     * this function clean the entities map
+     */
+    public static void cleanEntities() {
         entities.clear();
     }
 }

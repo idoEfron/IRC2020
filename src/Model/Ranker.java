@@ -13,66 +13,92 @@ public class Ranker {
     private double k_factor;
     private static Semaphore mutex = new Semaphore(1);
 
-    public Ranker(){
+    /**
+     * this function is the constructor of the class
+     */
+    public Ranker() {
 
         b_factor = 0.75;
         k_factor = 1.2;
 
     }
 
-    public Ranker(double k, double b){
+    /**
+     * this function is a secondary constructor of the class and get the  b_factor and the k_factor parameters
+     *
+     * @param k the k_factor
+     * @param b the b_factor
+     */
+    public Ranker(double k, double b) {
 
-        if(b>=0 && b<=1 && k>=1.2 && k<=2){
+        if (b >= 0 && b <= 1 && k >= 1.2 && k <= 2) {
             b_factor = b;
             k_factor = k;
-        }
-        else{
+        } else {
             b_factor = 0.75;
             k_factor = 1.2;
         }
     }
 
+    /**
+     * this function put a score acorrding to the formula
+     *
+     * @param query the query
+     * @param doc the document thar need to be score
+     * @param queryRun the queryRun object
+     * @return the score
+     * @throws InterruptedException
+     */
     public double score(List<String> query, String doc, QueryRun queryRun) throws InterruptedException {
 
-        double totalScore =0;
+        double totalScore = 0;
         int numberOfDocs = ReadFile.getDocs();
-        double avrgDocLength = Indexer.getTotalDocLength()/(double)numberOfDocs;
+        double avrgDocLength = Indexer.getTotalDocLength() / (double) numberOfDocs;
         int docLength = getDocLength(doc);
-        for(String term: query){
-            int queryTF = getQueryTF(query,term);
+        for (String term : query) {
+            int queryTF = getQueryTF(query, term);
 
             int df = queryRun.getPostingLines().get(term).size();
-            double idf = getIDF(numberOfDocs,df);
-            double numerator = ((double)getTF(term,doc,queryRun))*(k_factor+1);
-            double lengthDivision = docLength/avrgDocLength;
-            double denominator = ((double)getTF(term,doc, queryRun)) +(k_factor*(1-b_factor+b_factor*lengthDivision));
-            double termScore = ((double)2*queryTF)*idf*(numerator/denominator);
+            double idf = getIDF(numberOfDocs, df);
+            double numerator = ((double) getTF(term, doc, queryRun)) * (k_factor + 1);
+            double lengthDivision = docLength / avrgDocLength;
+            double denominator = ((double) getTF(term, doc, queryRun)) + (k_factor * (1 - b_factor + b_factor * lengthDivision));
+            double termScore = ((double) 2 * queryTF) * idf * (numerator / denominator);
             totalScore = totalScore + termScore;
         }
-
         return totalScore;
-
     }
 
+    /**
+     *this function is a getter
+     * @param query
+     * @param term
+     * @return
+     */
     private int getQueryTF(List<String> query, String term) {
-        int tf =0;
-        for(String str: query){
-            if(str.equalsIgnoreCase(term)){
+        int tf = 0;
+        for (String str : query) {
+            if (str.equalsIgnoreCase(term)) {
                 tf++;
             }
         }
         return tf;
     }
 
+    /**
+     *this function is a getter
+     * @param doc
+     * @return Doc Length
+     */
     private int getDocLength(String doc) {
-        String posting ="";
-        HashMap<String, Map <String,Set<String>>> indexer = Indexer.getDocDictionary();
+        String posting = "";
+        HashMap<String, Map<String, Set<String>>> indexer = Indexer.getDocDictionary();
         String path = (String) indexer.get(doc).keySet().toArray()[0];//todo ido change docdic
 
         // ******* reading first line ********
 
         try {
-            posting =Files.readAllLines(Paths.get(path)).get(0);
+            posting = Files.readAllLines(Paths.get(path)).get(0);
         } catch (IOException e) {
             System.out.println(path);
         }
@@ -83,28 +109,37 @@ public class Ranker {
         return Integer.parseInt(docInfo[2]);
     }
 
+    /**
+     *this function is a getter
+     * @param term
+     * @return
+     */
     private int getDF(String term) {
         List<String> line = getPostingLine(term);
         return line.size();
 
     }
 
-    public static List<String> getPostingLine(String term){
+    /**
+     *this function is a getter
+     * @param term
+     * @return
+     */
+    public static List<String> getPostingLine(String term) {
         Pattern TAG_REGEX = Pattern.compile("<(.+?)>", Pattern.DOTALL);
-        String posting ="";
+        String posting = "";
         Map<String, Map<String, ArrayList<Integer>>> indexer = Indexer.getTermDictionary();
-        String path ="";
-        try{
-            path = (String)indexer.get(term).keySet().toArray()[0];
-        }
-        catch(Exception e){
+        String path = "";
+        try {
+            path = (String) indexer.get(term).keySet().toArray()[0];
+        } catch (Exception e) {
             System.out.println(term);
         }
         int lineNum = indexer.get(term).get(indexer.get(term).keySet().toArray()[0]).get(1);
 
         // ******* reading specific line ********
         try {
-            posting =Files.readAllLines(Paths.get(path)).get(lineNum);
+            posting = Files.readAllLines(Paths.get(path)).get(lineNum);
         } catch (IOException e) {
             System.out.println(path);
             System.out.println(lineNum);
@@ -112,7 +147,7 @@ public class Ranker {
 
         //******** parse strings inside tags <> *********
 
-        posting = posting.substring(posting.indexOf(":")+1);
+        posting = posting.substring(posting.indexOf(":") + 1);
         List<String> tagValues = new ArrayList<String>();
         Matcher matcher = TAG_REGEX.matcher(posting);
         while (matcher.find()) {
@@ -122,15 +157,28 @@ public class Ranker {
         return tagValues;
     }
 
+    /**
+     *this function is a getter
+     * @param numberOfDocs
+     * @param df
+     * @return
+     */
     private double getIDF(int numberOfDocs, int df) {
 
-        return Math.log((numberOfDocs+1)/((double)df));
+        return Math.log((numberOfDocs + 1) / ((double) df));
     }
 
-    public int getTF(String term, String doc, QueryRun queryRun){
+    /**
+     *this function is a getter
+     * @param term
+     * @param doc
+     * @param queryRun
+     * @return
+     */
+    public int getTF(String term, String doc, QueryRun queryRun) {
         List<String> tagValues = queryRun.getPostingLines().get(term);
-        for(String str: tagValues){
-            if(str.startsWith(doc)){
+        for (String str : tagValues) {
+            if (str.startsWith(doc)) {
                 String[] termInfo = str.split("\\|");
                 return Integer.parseInt(termInfo[1]);
             }
