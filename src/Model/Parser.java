@@ -184,9 +184,10 @@ public class Parser {
         ClassLoader classLoader = ClassLoader.getSystemClassLoader();
         if (this.stopwords.size() == 0) {
             File stopWordsFile = null;
-            if (isQuery) {
+            if(isQuery){
                 stopWordsFile = new File(viewModel.getPostPath() + "/stop_words.txt");
-            } else {
+            }
+            else{
                 stopWordsFile = new File(stopWordsPath + "/stop_words.txt");/****************////////////////
             }
             String stopContent = new String(Files.readAllBytes(stopWordsFile.toPath()));
@@ -360,7 +361,7 @@ public class Parser {
                 String ent = entitiesPerDoc.get(docsId).toString();
                 lines.add(docsId + " : " + ent);
             }
-            Merge.writeRaw(lines, postingPath);
+            Merge.writeRaw(lines,postingPath);
             lines.clear();
         }
         mutex.release();

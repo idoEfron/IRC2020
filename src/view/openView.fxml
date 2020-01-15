@@ -113,20 +113,12 @@
                   <Font name="System Bold Italic" size="18.0" />
                </font>
             </Label>
-            <CheckBox fx:id="descripChoice" layoutX="15.0" layoutY="300.0" mnemonicParsing="false" text="Enable data from Description">
-               <font>
-                  <Font name="System Bold Italic" size="20.0" />
-               </font></CheckBox>
-            <CheckBox layoutX="15.0" layoutY="350.0" mnemonicParsing="false" text="Enable data from Narrative">
-               <font>
-                  <Font name="System Bold Italic" size="20.0" />
-               </font></CheckBox>
             <Label layoutX="200.0" layoutY="75.0" prefHeight="51.0" prefWidth="265.0" text="Process Queries" textFill="#11c5e1">
                <font>
                   <Font name="System Bold Italic" size="35.0" />
                </font>
             </Label>
-            <CheckBox fx:id="semanticCheckB" layoutX="15.0" layoutY="400.0" mnemonicParsing="false" text="Enable semantic prossesing ">
+            <CheckBox fx:id="semanticCheckB" layoutX="14.0" layoutY="330.0" mnemonicParsing="false" text="Enable semantic prossesing ">
                <font>
                   <Font name="System Bold Italic" size="20.0" />
                </font>
@@ -134,7 +126,7 @@
             <Button layoutX="510.0" layoutY="305.0" mnemonicParsing="false" onAction="#startQuery" prefHeight="50.0" prefWidth="180.0" text="Run queries file" />
             <Button layoutX="495.0" layoutY="370.0" mnemonicParsing="false" onAction="#displayTopFive" prefHeight="50.0" prefWidth="195.0" text="Display top five Entities" />
             <Button layoutX="495.0" layoutY="435.0" mnemonicParsing="false" onAction="#saveResult" prefHeight="50.0" prefWidth="195.0" text="Save Result" />
-            <ComboBox fx:id="comboBox" layoutX="339.0" layoutY="370.0" prefHeight="50.0" prefWidth="150.0" promptText="select document" />
+            <ComboBox fx:id="comboBox" layoutX="305.0" layoutY="370.0" prefHeight="50.0" prefWidth="180.0" promptText="select document" />
          </children>
       </Pane>
    </right>

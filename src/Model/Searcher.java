@@ -19,6 +19,7 @@ public class Searcher {
     private boolean description;
     private boolean stem;
     private ArrayList<String> queriesTokens;
+    private Map<String, Integer> docLength;
 
     /**
      * this function is the constructor of the class
@@ -27,10 +28,11 @@ public class Searcher {
      * @param stopWordPath the stop word path
      * @param stem         id stammer option was selected
      * @param description  if description was selected
+     * @param docLength
      * @throws IOException
      * @throws ParseException
      */
-    public Searcher(String query, String stopWordPath, Boolean stem, boolean description) throws IOException, ParseException {
+    public Searcher(String query, String stopWordPath, Boolean stem, boolean description, Map<String, Integer> docLength) throws IOException, ParseException {
         indexer = new Indexer(stem, stopWordPath);
         readFile = new ReadFile(null, indexer, stem, stopWordPath);
         parser = new Parser(false, readFile, stopWordPath, indexer, true);
@@ -38,6 +40,7 @@ public class Searcher {
         this.description = description;
         this.stem = stem;
         queriesTokens = new ArrayList<>();
+        this.docLength = docLength;
     }
 
     /**
@@ -216,7 +219,7 @@ public class Searcher {
     }
 
     /**
-     * this function 
+     * this function
      * @param docsRanks
      * @param queryList
      * @param semanticSelected
@@ -227,7 +230,7 @@ public class Searcher {
         com.medallia.word2vec.Searcher semanticSearcher = model.forSearch();
         ExecutorService executor = Executors.newFixedThreadPool(4);
         for (Query query : queryList) {
-            QueryRun queryRun = new QueryRun(query, docsRanks, semanticSelected, stem, description, semanticSearcher);
+            QueryRun queryRun = new QueryRun(query, docsRanks, semanticSelected, stem, description, semanticSearcher,this.docLength);
             executor.execute(new Thread(queryRun));
         }
         executor.shutdown();
@@ -267,7 +270,7 @@ public class Searcher {
     public void singleQueryRank(Query singleQuery, Map<String, Map<String, Double>> docsRanks, boolean semanticSelected) throws IOException {
         Word2VecModel model = Word2VecModel.fromTextFile(new File("resources/word2vec.c.output.model.txt"));
         com.medallia.word2vec.Searcher semanticSearcher = model.forSearch();
-        QueryRun queryRun = new QueryRun(singleQuery, docsRanks, semanticSelected, stem, description, semanticSearcher);
+        QueryRun queryRun = new QueryRun(singleQuery, docsRanks, semanticSelected, stem, description, semanticSearcher,this.docLength);
         queryRun.run();
     }
 }

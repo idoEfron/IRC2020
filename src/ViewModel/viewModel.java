@@ -3,7 +3,6 @@ package ViewModel;
 import Model.*;
 import Model.Merge;
 import Model.ReadFile;
-import com.medallia.word2vec.Word2VecModel;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -18,9 +17,10 @@ public class viewModel {
     private File subFolderTerms = null;
     private List<String> documentInQuery;
     private static String postPath;
-    private Map<String, Map<String, Double>> docsRanks;
+    private Map<String,Map<String,Double>> docsRanks;
     private String corPath;
-    private Map<String, Map<String, Double>> topFifty;
+    private Map<String,Map<String,Double>> topFifty;
+    private Map<String,Integer> docLength;
 
     public viewModel() {
         documentInQuery = new LinkedList<>();
@@ -141,13 +141,12 @@ public class viewModel {
 
         return corpusInfo;
     }
-
-    private void uploadMap(String posting, File docEntities) throws IOException {
-        Parser.cleanEntities();
-        Indexer.clearDocdic();
+    private void uploadMap(String posting,File docEntities) throws IOException {
         if (docEntities.exists()) {
+            Indexer.getDocDictionary().clear();
+            Parser.cleanEntities();
             List<String> doctxt = Files.readAllLines(docEntities.toPath(), StandardCharsets.UTF_8);
-            //docEntities.delete();
+            docEntities.delete();
             HashMap<String, Map<String, String>> hashDocEnt = new HashMap<>();
             for (int i = 0; i < doctxt.size(); i++) {
                 String[] strArr = doctxt.get(i).split(" : ");
@@ -168,13 +167,13 @@ public class viewModel {
                     }
                 }
             }
-            HashMap<String, Map<String, Set<String>>> docDictionary = new HashMap<>();
+            HashMap<String,Map< String,Set<String>>> docDictionary = new HashMap<>();
             if (hashDocEnt.size() > 0) {
-                for (String s : hashDocEnt.keySet()) {
+                for (String s:hashDocEnt.keySet()) {
                     hashDocEnt.get(s).keySet().retainAll(Indexer.getTermDictionary().keySet());
-                    docDictionary.put(s, new HashMap<>());
+                    docDictionary.put(s,new HashMap<>());
                     // selectTopFive(s,postingPath,hashDocEnt.get(s));
-                    docDictionary.put(s, selectTopFive(s, posting, hashDocEnt.get(s)));
+                    docDictionary.put(s,selectTopFive(s,posting,hashDocEnt.get(s)));
                 }
                 Indexer.setDocDictionary(docDictionary);
             }
@@ -205,13 +204,13 @@ public class viewModel {
                 topFive.add("the ranking of the entity :" + maxString + " is " + max);
                 numberOfEntities++;
             }
-            topFiveEntitiesDocs.put(corPath + "/Docs/" + s + ".txt", topFive);
+            topFiveEntitiesDocs.put(corPath +"/Docs/"+ s + ".txt" , topFive);
         } else if (hashDocEnt.size() >= 0) {
-            for (String str :hashDocEnt.keySet()){
-                topFive.add("the ranking of the entity :" + str + " is " + hashDocEnt.get(str));
-            }
-            topFiveEntitiesDocs.put(corPath + "/Docs/" + s + ".txt", topFive);
+        for (String str :hashDocEnt.keySet()){
+            topFive.add("the ranking of the entity :" + str + " is " + hashDocEnt.get(str));
         }
+        topFiveEntitiesDocs.put(corPath + "/Docs/" + s + ".txt", topFive);
+    }
         return topFiveEntitiesDocs;
     }
 
@@ -302,6 +301,7 @@ public class viewModel {
      */
 
     public void loadDictionary(boolean selected, String postPath) throws IOException {
+        docLength = new HashMap<>();
         this.postPath = postPath;
         File file = new File(postPath + "/termDictionary.txt");
         Indexer index = new Indexer(selected, postPath);
@@ -364,11 +364,45 @@ public class viewModel {
                 Indexer.setTotalDocLength(Double.parseDouble(strArr[1]));
             }
         }
+
         buffCor.close();
+
+        File docFolder=null;
+        if(selected){
+            docFolder = new File(postPath + "/StemmedCorpus/Docs/");
+        }
+        else{
+            docFolder = new File(postPath + "/Corpus/Docs/");
+        }
+        File[] listOfFiles = docFolder.listFiles();
+
+        for (File doc : listOfFiles) {
+            if (doc.isFile()) {
+                try {
+                    List<String> posting = Files.readAllLines(doc.toPath());
+
+                    //******** splitting string by "," *********
+
+                    for(String str : posting){
+                        String[] docInfo = str.split(",");
+                        if(Character.isLetter(docInfo[2].charAt(0))){
+                            docLength.put(str.substring(0,str.indexOf(":")),0);
+
+                        }
+                        else{
+                            docLength.put(str.substring(0,str.indexOf(":")),Integer.parseInt(docInfo[2]));
+                        }
+                    }
+
+                } catch (Exception e) {
+                    System.out.println(doc);
+                }
+            }
+        }
     }
 
     public LinkedList<String> startQuery(String path, String stopWordsPath, boolean stem, boolean semanticSelected, boolean isDescription) throws IOException, ParseException, InterruptedException {
-        Searcher searcher = new Searcher(path, stopWordsPath, stem, isDescription);
+        Searcher searcher = new Searcher(path, stopWordsPath, stem, isDescription,docLength);
         List<Query> queryList = searcher.readQuery();
         Map<String, Map<String, Double>> docsRanks = new HashMap<>();
         searcher.relevantDocs(docsRanks,queryList,semanticSelected);
@@ -418,7 +452,7 @@ public class viewModel {
 
     public LinkedList<String> startSingleQuery(String query, String stopWordsPath, boolean stem, boolean semanticSelected, boolean isDescription) throws IOException, ParseException, InterruptedException {
 
-        Searcher searcher = new Searcher(query, stopWordsPath, stem, isDescription);
+        Searcher searcher = new Searcher(query, stopWordsPath, stem, isDescription, docLength);
         Query singleQuery = searcher.startSingleQuery();
 
         Map<String, Map<String, Double>> docsRanks = new HashMap<>();

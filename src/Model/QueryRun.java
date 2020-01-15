@@ -15,8 +15,8 @@ public class QueryRun implements Runnable {
     private boolean isDescription;
     private static Semaphore mutex = new Semaphore(1);
     private Searcher semanticSearcher;
-    private Map<String, List<String>> postingLines;
-
+    private static Map<String,List<String>> postingLines =new HashMap<>();;
+    private Map<String,Integer> docLength;
     /**
      * this function is the constructor of the class
      *
@@ -27,14 +27,14 @@ public class QueryRun implements Runnable {
      * @param isDescription
      * @param semanticSearcher
      */
-    public QueryRun(Query query, Map<String, Map<String, Double>> docsRanks, boolean semanticSelected, boolean stem, boolean isDescription, Searcher semanticSearcher) {
+    public QueryRun(Query query, Map<String, Map<String, Double>> docsRanks, boolean semanticSelected, boolean stem, boolean isDescription, Searcher semanticSearcher, Map<String, Integer> docLength){
         this.query = query;
         this.docsRanks = docsRanks;
         this.semanticSelected = semanticSelected;
         this.stem = stem;
         this.isDescription = isDescription;
         this.semanticSearcher = semanticSearcher;
-        postingLines = new HashMap<>();
+        this.docLength = docLength;
 
     }
 
@@ -72,34 +72,44 @@ public class QueryRun implements Runnable {
      */
     private Map<String, Double> getAllRankedDocs(Query queriesTokens, boolean semanticSelected, boolean stem, boolean isDescription) throws IOException {
         List<String> queryWithSemantic = new ArrayList<>();
+        List<String> descQuery = new ArrayList<>();
 
         //intersaction with terms of inverted index
         Set indexedTerms = Indexer.getTermDictionary().keySet();
         //todo change to end of semantic query ;
 
         Set<String> retrievedDocs = new HashSet<>();
+        Set<String> semanticDocs = new HashSet<>();
+        Set<String> descDocs = new HashSet<>();
 
         Map<String, Double> docsRanks = new HashMap<>();
 
         try {
 
-            int numOfResults = 10;
+            // get semantic details and docs
+            int numOfResults = 6;
 
             if (semanticSelected) {
                 getRelevantDocsWithSemantics(queriesTokens, queryWithSemantic, indexedTerms, semanticSearcher, numOfResults, stem, isDescription);
-                getRelevantTermsWithDesc(queryWithSemantic, queriesTokens, stem, isDescription);
             }
+            queryWithSemantic.retainAll(indexedTerms);
+            getRelevantDocs(queryWithSemantic,semanticDocs);
 
+            //get query details and docs
             ArrayList<String> result = new ArrayList<>(queriesTokens.getTokenQuery());
             ArrayList<String> queryToRank = new ArrayList<>();
-            for (String qtr : result) {
-                if (!result.contains(qtr.toLowerCase())) {
+            for(String qtr: result){
+                if(!result.contains(qtr.toLowerCase())){
                     queryToRank.add(qtr.toLowerCase());
                 }
-                if (!result.contains(qtr.toUpperCase())) {
+                if(!result.contains(qtr.toUpperCase())){
                     queryToRank.add(qtr.toUpperCase());
                 }
             }
+
+            getRelevantTermsWithDesc(descQuery, queriesTokens, stem, isDescription);
+            descQuery.retainAll(indexedTerms);
+            getRelevantDocs(descQuery,descDocs);
 
             queryToRank.addAll(result);
             if (stem) {
@@ -107,15 +117,20 @@ public class QueryRun implements Runnable {
                 for (String term : queryToRank) {
                     stemmedQuery.add(stemTerm(term));
                 }
-                queryToRank = stemmedQuery;
+                for(String term: stemmedQuery){
+                    if(!queryToRank.contains(term)){
+                        queryToRank.add(term);
+                    }
+                }
             }
 
 
             queryToRank.retainAll(indexedTerms);
             getRelevantDocs(queryToRank, retrievedDocs);
-            queryWithSemantic.retainAll(indexedTerms);
+            semanticDocs.retainAll(retrievedDocs);
+            retrievedDocs.addAll(descDocs);
 
-            docsRanks = rankDocs(retrievedDocs, queryToRank, queryWithSemantic);
+            docsRanks = rankDocs(retrievedDocs, queryToRank, queryWithSemantic,descQuery);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -123,14 +138,13 @@ public class QueryRun implements Runnable {
         return docsRanks;
 
     }
-
-     /**this function get all the ranked documents in a query with description
+    /**this function get all the ranked documents in a query with description
      * @param query the query
      * @param queriesTokens the list if token description in a query
      * @param stem if is stemming was selected
      * @param isDescription
      */
-    private void getRelevantTermsWithDesc(List<String> queriesTokens, Query query , boolean stem, boolean isDescription) {
+    private void getRelevantTermsWithDesc(List<String> query, Query queriesTokens, boolean stem, boolean isDescription) {
         //remove garbage terms
         ArrayList<String> garbage = new ArrayList<>();
         garbage.add("DESCRIPTION");
@@ -138,8 +152,6 @@ public class QueryRun implements Runnable {
         garbage.add("available");
         garbage.add("documents");
         garbage.add("document");
-        garbage.add("discuss");
-        garbage.add("discussing");
         garbage.add("regarding");
         garbage.add("regard");
         garbage.add("find");
@@ -149,19 +161,19 @@ public class QueryRun implements Runnable {
         garbage.add("identify".toUpperCase());
 
 
-        ArrayList<String> descSemantic = new ArrayList<>();
-        ArrayList<String> descSet = query.getTokenDesc();
-        for (String desc : descSet) {
-            if (!garbage.contains(desc)) {
-                if (stem) {
-                    desc = stemTerm(desc);
+            ArrayList<String> descSemantic = new ArrayList<>();
+            ArrayList<String> descSet = queriesTokens.getTokenDesc();
+            for (String desc : descSet) {
+                if(!garbage.contains(desc)){
+                    if (stem) {
+                        desc = stemTerm(desc);
+                    }
                 }
+                descSemantic.add(desc);
+                //descSemantic.add(desc.toLowerCase());
+                //descSemantic.add(desc.toUpperCase());
             }
-            descSemantic.add(desc);
-            //descSemantic.add(desc.toLowerCase());
-            //descSemantic.add(desc.toUpperCase());
-        }
-        queriesTokens.addAll(descSemantic);
+            query.addAll(descSemantic);
     }
 
     /**
@@ -170,12 +182,22 @@ public class QueryRun implements Runnable {
      * @return the semanticTerm
      */
     private static String stemTerm(String semanticTerm) {
-        porterStemmer ps = new porterStemmer();
-        ps.setCurrent(semanticTerm);
-        ps.stem();
-        return ps.getCurrent();
-    }
+        if(Character.isUpperCase(semanticTerm.charAt(0))){
+            String newTerm= new String(semanticTerm.toLowerCase());
+            porterStemmer ps = new porterStemmer();
+            ps.setCurrent(newTerm);
+            ps.stem();
+            newTerm = ps.getCurrent().toUpperCase();
+            return newTerm;
+        }
 
+        String newTerm= semanticTerm;
+        porterStemmer ps = new porterStemmer();
+        ps.setCurrent(newTerm);
+        ps.stem();
+        newTerm =ps.getCurrent();
+        return newTerm;
+    }
     /**+
      * this function ranking all the rekevent document
      * @param retrievedDocs the retrieved Documents of a query
@@ -184,13 +206,13 @@ public class QueryRun implements Runnable {
      * @return
      * @throws InterruptedException
      */
-    private Map<String, Double> rankDocs(Set<String> retrievedDocs, List<String> queryToRank, List<String> queryWithSemantic) throws InterruptedException {
-        Ranker ranker = new Ranker();
+    private Map<String, Double> rankDocs(Set<String> retrievedDocs, List<String> queryToRank, List<String> queryWithSemantic,List<String> descQuery) throws InterruptedException {
+        Ranker ranker = new Ranker(postingLines,queryToRank,queryWithSemantic);
         Map<String, Double> docsRanks = new HashMap<>();
 
         for (String doc : retrievedDocs) {
-            double originalRank = ranker.score(queryToRank, doc, this);
-            double newRank = 0.5 * originalRank + 0.5 * ranker.score(queryWithSemantic, doc, this);
+            double originalRank = ranker.score(queryToRank, doc,this,this.docLength);
+            double newRank = (double)2.1 * originalRank +0.6*ranker.score(descQuery,doc,this,this.docLength) +0.2 * ranker.score(queryWithSemantic, doc, this,this.docLength);
             docsRanks.put(doc, newRank);
 
         }
@@ -205,10 +227,16 @@ public class QueryRun implements Runnable {
      * @throws InterruptedException
      */
     private void addDocstoRetrievedDocs(String term, Set<String> retrievedDocs) throws InterruptedException {
+        List<String> postingLine = new ArrayList<>();
         mutex.acquire();
-        List<String> postingLine = Ranker.getPostingLine(term);
+        if(!postingLines.containsKey(term)){
+            postingLine = Ranker.getPostingLine(term);
+            postingLines.put(term,new ArrayList<>(postingLine));
+        }
+        else{
+            postingLine= postingLines.get(term);
+        }
         mutex.release();
-        postingLines.put(term, new ArrayList<>(postingLine));
         for (String str : postingLine) {
             String[] termInfo = str.split("\\|");
             retrievedDocs.add(termInfo[0]);
@@ -228,7 +256,6 @@ public class QueryRun implements Runnable {
             addDocstoRetrievedDocs(queryTerm, retrievedDocs);
         }
     }
-
     /**
      * this function get all the relevant document with semantics
      * @param queryToRank the query
@@ -239,7 +266,7 @@ public class QueryRun implements Runnable {
      * @param stem if stammer option was selected
      * @param isDescription
      */
-    private void getRelevantDocsWithSemantics(Query queryToRank, List<String> queryWithSemantic, Set indexedTerms, com.medallia.word2vec.Searcher semanticSearcher, int numOfResults, boolean stem, boolean isDescription) {
+    private void getRelevantDocsWithSemantics(Query queryToRank, List<String> queryWithSemantic, Set indexedTerms, Searcher semanticSearcher, int numOfResults, boolean stem, boolean isDescription) {
         for (String queryTerm : queryToRank.getTokenQuery()) {
             try {
 
@@ -249,10 +276,10 @@ public class QueryRun implements Runnable {
                     String semanticTerm = match.match();
                     if (stem) {
                         semanticTerm = stemTerm(semanticTerm);
-
                     }
+
                     //todo insert to if queryToRank.getDesc().contains(semanticTerm) and increase numOfResults
-                    if ((indexedTerms.contains(semanticTerm) || indexedTerms.contains(semanticTerm.toLowerCase()) || indexedTerms.contains(semanticTerm.toUpperCase())) && !queryTerm.contains(semanticTerm)) {
+                    if ((indexedTerms.contains(semanticTerm) || indexedTerms.contains(semanticTerm.toLowerCase()) || indexedTerms.contains(semanticTerm.toUpperCase()))) {
                         queryWithSemantic.add(semanticTerm.toLowerCase());
                         queryWithSemantic.add(semanticTerm.toUpperCase());
                         queryWithSemantic.add(semanticTerm);
@@ -260,6 +287,7 @@ public class QueryRun implements Runnable {
                     }
 
                 }
+
             } catch (com.medallia.word2vec.Searcher.UnknownWordException e) {
                 // TERM NOT KNOWN TO MODEL
             }
