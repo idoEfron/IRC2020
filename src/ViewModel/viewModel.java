@@ -402,6 +402,7 @@ public class viewModel {
     }
 
     public LinkedList<String> startQuery(String path, String stopWordsPath, boolean stem, boolean semanticSelected, boolean isDescription) throws IOException, ParseException, InterruptedException {
+        QueryRun.getPostingLines().clear();
         Searcher searcher = new Searcher(path, stopWordsPath, stem, isDescription,docLength);
         List<Query> queryList = searcher.readQuery();
         Map<String, Map<String, Double>> docsRanks = new HashMap<>();
@@ -451,7 +452,7 @@ public class viewModel {
     }
 
     public LinkedList<String> startSingleQuery(String query, String stopWordsPath, boolean stem, boolean semanticSelected, boolean isDescription) throws IOException, ParseException, InterruptedException {
-
+        QueryRun.getPostingLines().clear();
         Searcher searcher = new Searcher(query, stopWordsPath, stem, isDescription, docLength);
         Query singleQuery = searcher.startSingleQuery();
 

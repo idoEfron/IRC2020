@@ -84,7 +84,6 @@ public class Ranker {
         int iDocLength = docLength.get(doc);
         for(String term: query){
             int queryTF = getQueryTF(query,term);
-
             int df = queryRun.getPostingLines().get(term).size();
             double idf = getIDF(numberOfDocs,df);
             double numerator = ((double)getTF(term,doc,queryRun))*(k_factor+1);

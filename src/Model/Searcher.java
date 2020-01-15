@@ -228,7 +228,7 @@ public class Searcher {
     public void relevantDocs(Map<String, Map<String, Double>> docsRanks, List<Query> queryList, boolean semanticSelected) throws IOException {
         Word2VecModel model = Word2VecModel.fromTextFile(new File("resources/word2vec.c.output.model.txt"));
         com.medallia.word2vec.Searcher semanticSearcher = model.forSearch();
-        ExecutorService executor = Executors.newFixedThreadPool(4);
+        ExecutorService executor = Executors.newFixedThreadPool(1);
         for (Query query : queryList) {
             QueryRun queryRun = new QueryRun(query, docsRanks, semanticSelected, stem, description, semanticSearcher,this.docLength);
             executor.execute(new Thread(queryRun));
