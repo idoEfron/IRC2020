@@ -177,60 +177,70 @@ public class Controller implements Initializable {
 
     @FXML
     public void startQuery() throws IOException, ParseException, InterruptedException {
-        if(Indexer.getTermDictionary().size()==0||Indexer.getDocDictionary().size()==0){
-            showAlert("please run OR load corpus");
-            return;
-        }
-        if (txtQueryPath.getText() == null || txtQueryPath.getText().equals("")) {
-            showAlert("please enter queries path");
-            return;
-        }
-        if (txtPosting.getText() == null || txtPosting.getText().equals("")) {
-            showAlert("no posting ");
-            return;
-        }
-        String path = txtQueryPath.getText();
-        //Map<String,Map<String,Double>> finalDocs = viewModel.startQuery(path,txtBrowse.getText(),stemmerCheckB.isSelected(),semanticCheckB.isSelected());
-        List<String> outDisplay = viewModel.startQuery(path, txtPosting.getText(), stemmerCheckB.isSelected(), semanticCheckB.isSelected(), true);
-        if (outDisplay != null && outDisplay.size() > 0) {
-            ObservableList<String> observableList = FXCollections.observableList(outDisplay);
-            ListView listView = new ListView<>();
-            listView.setItems(observableList);
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("dictionary.fxml"));
-            Parent tableParent = (Parent) fxmlLoader.load();
-            Scene scene = new Scene(listView, 450, 400);
-            Stage stage = new Stage();
-            Stage window = new Stage();
-            window.setScene(scene);
-            stage.setTitle("queries");
-            window.show();
-            if (viewModel.getDocumentInQuery().size() > 0 && viewModel.getDocumentInQuery() != null) {
-                comboBox.getItems().removeAll();
-                comboBox.getItems().addAll(viewModel.getDocumentInQuery().stream().sorted().collect(Collectors.toList()));
+        try {
+            if (Indexer.getTermDictionary().size() == 0 || Indexer.getDocDictionary().size() == 0) {
+                showAlert("please run OR load corpus");
+                return;
             }
-        } else {
-            showAlert("There's nothing to display");
+            if (txtQueryPath.getText() == null || txtQueryPath.getText().equals("")) {
+                showAlert("please enter queries path");
+                return;
+            }
+            if (txtPosting.getText() == null || txtPosting.getText().equals("")) {
+                showAlert("no posting ");
+                return;
+            }
+            String path = txtQueryPath.getText();
+            //Map<String,Map<String,Double>> finalDocs = viewModel.startQuery(path,txtBrowse.getText(),stemmerCheckB.isSelected(),semanticCheckB.isSelected());
+            List<String> outDisplay = viewModel.startQuery(path, txtPosting.getText(), stemmerCheckB.isSelected(), semanticCheckB.isSelected(), true);
+            if (outDisplay != null && outDisplay.size() > 0) {
+                ObservableList<String> observableList = FXCollections.observableList(outDisplay);
+                ListView listView = new ListView<>();
+                listView.setItems(observableList);
+                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("dictionary.fxml"));
+                Parent tableParent = (Parent) fxmlLoader.load();
+                Scene scene = new Scene(listView, 450, 400);
+                Stage stage = new Stage();
+                Stage window = new Stage();
+                window.setScene(scene);
+                stage.setTitle("queries");
+                window.show();
+                if (viewModel.getDocumentInQuery().size() > 0 && viewModel.getDocumentInQuery() != null) {
+                    comboBox.getItems().removeAll();
+                    comboBox.getItems().addAll(viewModel.getDocumentInQuery().stream().sorted().collect(Collectors.toList()));
+                }
+            } else {
+                showAlert("There's nothing to display");
+            }
+        }catch (Exception e){
+            showAlert("problem in startQuery please try again or close the program" );
         }
     }
 
     @FXML
     public void displayTopFive() throws IOException {
-        if(comboBox.getValue()==null){
-            showAlert("Please choose document/run query");
-            return;
-        }
-        if (comboBox.getValue() != null || comboBox.getValue().equals("")) {
-            String docComo = comboBox.getValue();
-            if (txtPosting.getText() == null || txtPosting.getText().equals("")) {
-                showAlert("please enter posting path");
-            } else {
-                String path = txtPosting.getText() + "/docDictionary.txt";
-                readDoc(docComo, path);
+        try {
+            if (comboBox.getValue() == null) {
+                showAlert("Please choose document/run query");
+                return;
             }
+            if (comboBox.getValue() != null || comboBox.getValue().equals("")) {
+                String docComo = comboBox.getValue();
+                if (txtPosting.getText() == null || txtPosting.getText().equals("")) {
+                    showAlert("please enter posting path");
+                } else {
+                    String path = txtPosting.getText() + "/docDictionary.txt";
+                    readDoc(docComo, path);
+                }
+            }
+        }catch (Exception e){
+            showAlert("problem in displayTopFive please try again or close the program" );
         }
     }
 
     private void readDoc(String docComo, String stemmerPath) throws IOException {
+        try {
+
         File topFiveStem = new File(stemmerPath);
         if (topFiveStem.exists()) {
             List<String> text = Files.readAllLines(topFiveStem.toPath(), StandardCharsets.UTF_8);
@@ -249,66 +259,77 @@ public class Controller implements Initializable {
                 }
             }
         }
+        }catch (Exception e){
+            showAlert("problem in readDoc please try again or close the program" );
+        }
     }
 
     @FXML
     public void startSingleQuery() throws IOException, ParseException, InterruptedException {
-        List<String> outDisplay = new LinkedList<>();
-        String query = txtQuery.getText();
-        if(Indexer.getTermDictionary().size()==0||Indexer.getDocDictionary().size()==0){
-            showAlert("please run OR load corpus");
-            return;
-        }
-        if (txtPosting.getText() == null) {
-            showAlert("no posting ");
-            return;
-
-        }
-        if (txtQuery.getText() == null) {
-            showAlert("please enter query");
-            return;
-        }
-        if (!txtQuery.getText().contains("<num>") || !txtQuery.getText().contains("<title> ")) {
-            showAlert("please enter correct query");
-            return;
-        }
-        outDisplay = viewModel.startSingleQuery(query, txtPosting.getText(), stemmerCheckB.isSelected(), semanticCheckB.isSelected(), true);
-        if (outDisplay != null && outDisplay.size() > 0) {
-            ObservableList<String> observableList = FXCollections.observableList(outDisplay);
-            ListView listView = new ListView<>();
-            listView.setItems(observableList);
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("dictionary.fxml"));
-            Parent tableParent = (Parent) fxmlLoader.load();
-            Scene scene = new Scene(listView, 400, 400);
-            Stage stage = new Stage();
-            Stage window = new Stage();
-            window.setScene(scene);
-            stage.setTitle("queries");
-            window.show();
-            if (viewModel.getDocumentInQuery().size() > 0 && viewModel.getDocumentInQuery() != null) {
-                comboBox.getItems().removeAll();
-                comboBox.getItems().addAll(viewModel.getDocumentInQuery());
+        try {
+            List<String> outDisplay = new LinkedList<>();
+            String query = txtQuery.getText();
+            if (Indexer.getTermDictionary().size() == 0 || Indexer.getDocDictionary().size() == 0) {
+                showAlert("please run OR load corpus");
+                return;
             }
-        } else {
-            showAlert("There's nothing to display");
+            if (txtPosting.getText() == null) {
+                showAlert("no posting ");
+                return;
+
+            }
+            if (txtQuery.getText() == null) {
+                showAlert("please enter query");
+                return;
+            }
+            if (!txtQuery.getText().contains("<num>") || !txtQuery.getText().contains("<title> ")) {
+                showAlert("please enter correct query");
+                return;
+            }
+            outDisplay = viewModel.startSingleQuery(query, txtPosting.getText(), stemmerCheckB.isSelected(), semanticCheckB.isSelected(), true);
+            if (outDisplay != null && outDisplay.size() > 0) {
+                ObservableList<String> observableList = FXCollections.observableList(outDisplay);
+                ListView listView = new ListView<>();
+                listView.setItems(observableList);
+                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("dictionary.fxml"));
+                Parent tableParent = (Parent) fxmlLoader.load();
+                Scene scene = new Scene(listView, 400, 400);
+                Stage stage = new Stage();
+                Stage window = new Stage();
+                window.setScene(scene);
+                stage.setTitle("queries");
+                window.show();
+                if (viewModel.getDocumentInQuery().size() > 0 && viewModel.getDocumentInQuery() != null) {
+                    comboBox.getItems().removeAll();
+                    comboBox.getItems().addAll(viewModel.getDocumentInQuery());
+                }
+            } else {
+                showAlert("There's nothing to display");
+            }
+            //comboBox.getItems().addAll(comoList);
+        }catch (Exception e){
+            showAlert("problem in startSingleQuery please try again or close the program" );
         }
-        //comboBox.getItems().addAll(comoList);
     }
     @FXML
     public void saveResult() throws IOException {
-        String path = "";
-        DirectoryChooser directoryChooser = new DirectoryChooser();
-        File selectedDirectory = directoryChooser.showDialog(null);
-        if (selectedDirectory != null) {
-            path = selectedDirectory.getAbsolutePath();
-            if (viewModel.getDocsRanks()!=null&&viewModel.getDocsRanks().size() == 0) {
-                showAlert("please run query");
-                return;
+        try {
+            String path = "";
+            DirectoryChooser directoryChooser = new DirectoryChooser();
+            File selectedDirectory = directoryChooser.showDialog(null);
+            if (selectedDirectory != null) {
+                path = selectedDirectory.getAbsolutePath();
+                if (viewModel.getDocsRanks() != null && viewModel.getDocsRanks().size() == 0 || viewModel.getTopFifty() == null) {
+                    showAlert("please run query");
+                    return;
+                }
+                viewModel.writeToResultFile(path);
+                showAlert("Result have neen saved!!:)");
+            } else {
+                showAlert("please select correct path");
             }
-            viewModel.writeToResultFile(path);
-            showAlert("Result have neen saved!!:)");
-        }else {
-            showAlert("please select correct path");
+        }catch (Exception e){
+            showAlert("problem in saveResult please try again or close the program" );
         }
     }
     /**
@@ -318,30 +339,34 @@ public class Controller implements Initializable {
      */
     @FXML
     private void displayDictionary() throws IOException {
-        List<String> dictionary = new LinkedList<>();
-        File file = null;
-        if (postPath != null) {
-            file = new File(txtPosting.getText());
-        }
-        if (txtPosting.getText().length() > 0 && file != null) {
-            dictionary = viewModel.displayDictionary(stemmerCheckB.isSelected(), txtPosting.getText());
-            if (dictionary != null && dictionary.size() > 0) {
-                ObservableList<String> observableList = FXCollections.observableList(dictionary);
-                ListView listView = new ListView<>();
-                listView.setItems(observableList);
-                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("dictionary.fxml"));
-                Parent tableParent = (Parent) fxmlLoader.load();
-                Scene scene = new Scene(listView, 400, 400);
-                Stage stage = new Stage();
-                Stage window = new Stage();
-                window.setScene(scene);
-                stage.setTitle("Dictionary");
-                window.show();
-            } else {
-                showAlert("There's no dictionary to display");
+        try {
+            List<String> dictionary = new LinkedList<>();
+            File file = null;
+            if (postPath != null) {
+                file = new File(txtPosting.getText());
             }
-        } else {
-            showAlert("please enter correct posting path");
+            if (txtPosting.getText().length() > 0 && file != null) {
+                dictionary = viewModel.displayDictionary(stemmerCheckB.isSelected(), txtPosting.getText());
+                if (dictionary != null && dictionary.size() > 0) {
+                    ObservableList<String> observableList = FXCollections.observableList(dictionary);
+                    ListView listView = new ListView<>();
+                    listView.setItems(observableList);
+                    FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("dictionary.fxml"));
+                    Parent tableParent = (Parent) fxmlLoader.load();
+                    Scene scene = new Scene(listView, 400, 400);
+                    Stage stage = new Stage();
+                    Stage window = new Stage();
+                    window.setScene(scene);
+                    stage.setTitle("Dictionary");
+                    window.show();
+                } else {
+                    showAlert("There's no dictionary to display");
+                }
+            } else {
+                showAlert("please enter correct posting path");
+            }
+        }catch (Exception e){
+            showAlert("problem in displayDictionary please try again or close the program" );
         }
     }
 
@@ -354,15 +379,20 @@ public class Controller implements Initializable {
 
     @FXML
     private void loadDictionary() throws IOException {
-        postPath = txtPosting.getText();
-        if (postPath == null || postPath.equals("")) {
-            showAlert("please enter posting path");
-            return;
-        } else {
-            viewModel.loadDictionary(stemmerCheckB.isSelected(), postPath);
-            String dictionary = "";
-            showAlert("saving completed!");
+        try {
 
+            postPath = txtPosting.getText();
+            if (postPath == null || postPath.equals("")) {
+                showAlert("please enter posting path");
+                return;
+            } else {
+                viewModel.loadDictionary(stemmerCheckB.isSelected(), postPath);
+                String dictionary = "";
+                showAlert("saving completed!");
+
+            }
+        }catch (Exception e){
+            showAlert("problem in loadDictionary please try again or close the program" );
         }
     }
 

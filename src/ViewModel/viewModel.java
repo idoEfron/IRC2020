@@ -491,32 +491,7 @@ public class viewModel {
         return documentInQuery;
     }
 
-//    private Map<String, Double> topFifty(Map<String, Double> docRanked) {
-//        Map<String, Double> docRankCopy = new HashMap<>(docRanked);
-//        if (docRanked.size() > 50) {
-//            int numberOfdocs = 0;
-//            Map<String, Double> topFifty = new HashMap<>();
-//            while (numberOfdocs != 50) {
-//                //int max = entitiesPerDoc.get(0);
-//                Set<String> str = docRankCopy.keySet();
-//                String[] strArr = new String[docRankCopy.keySet().size()];
-//                strArr = str.toArray(strArr);
-//                double max = docRankCopy.get(strArr[0]);
-//                String maxString = strArr[0];
-//                for (int k = 1; k < strArr.length; k++) {
-//                    if (docRankCopy.get(strArr[k]) > max) {
-//                        max = docRankCopy.get(strArr[k]);
-//                        maxString = strArr[k];
-//                    }
-//                }
-//                docRankCopy.remove(maxString);
-//                topFifty.put(maxString, max);
-//                numberOfdocs++;
-//            }
-//            return topFifty;
-//        } else if (docRankCopy.keySet().size() >= 0) {
-//            return docRanked;
-//        }
-//        return null;
-//    }
+    public Map<String, Map<String, Double>> getTopFifty() {
+        return topFifty;
+    }
 }
