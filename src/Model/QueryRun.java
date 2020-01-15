@@ -107,9 +107,9 @@ public class QueryRun implements Runnable {
                 }
             }
 
-            getRelevantTermsWithDesc(descQuery, queriesTokens, stem, isDescription);
-            descQuery.retainAll(indexedTerms);
-            getRelevantDocs(descQuery,descDocs);
+            //getRelevantTermsWithDesc(descQuery, queriesTokens, stem, isDescription);
+            //descQuery.retainAll(indexedTerms);
+            //getRelevantDocs(descQuery,descDocs);
 
             queryToRank.addAll(result);
             if (stem) {
@@ -133,7 +133,7 @@ public class QueryRun implements Runnable {
             docsRanks = rankDocs(retrievedDocs, queryToRank, queryWithSemantic,descQuery);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("error ranking query" +queriesTokens.getNumOfQuery());
         }
         return docsRanks;
 
