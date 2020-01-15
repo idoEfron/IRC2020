@@ -20,7 +20,6 @@ public class viewModel {
     private Map<String,Map<String,Double>> docsRanks;
     private String corPath;
     private Map<String,Map<String,Double>> topFifty;
-    
     private static Map<String,Integer> docLength = new HashMap<>();
 
     public viewModel() {
