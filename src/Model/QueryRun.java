@@ -164,10 +164,8 @@ public class QueryRun implements Runnable {
             ArrayList<String> descSemantic = new ArrayList<>();
             ArrayList<String> descSet = queriesTokens.getTokenDesc();
             for (String desc : descSet) {
-                if(!garbage.contains(desc)){
-                    if (stem) {
-                        desc = stemTerm(desc);
-                    }
+                if (stem) {
+                    desc = stemTerm(desc);
                 }
                 descSemantic.add(desc);
                 //descSemantic.add(desc.toLowerCase());
@@ -282,7 +280,7 @@ public class QueryRun implements Runnable {
                     if ((indexedTerms.contains(semanticTerm) || indexedTerms.contains(semanticTerm.toLowerCase()) || indexedTerms.contains(semanticTerm.toUpperCase()))) {
                         queryWithSemantic.add(semanticTerm.toLowerCase());
                         queryWithSemantic.add(semanticTerm.toUpperCase());
-                        queryWithSemantic.add(semanticTerm);
+                        //queryWithSemantic.add(semanticTerm);
                         //addDocstoRetrievedDocs(semanticTerm,retrievedDocsWithSemantics);
                     }
 
@@ -298,8 +296,13 @@ public class QueryRun implements Runnable {
      * this functuin get the posting line for each term
      * @return the posting line map
      */
-    public Map<String, List<String>> getPostingLines() {
+    public static Map<String, List<String>> getPostingLines() {
         return postingLines;
     }
+
+    public Query getQuery() {
+        return query;
+    }
+
 
 }
