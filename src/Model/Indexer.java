@@ -13,6 +13,7 @@ public class Indexer {
     private File subFolderDocs;
     private static Semaphore mutex = new Semaphore(1);
     private static double totalDocLength;
+    private static int DocBlock=0;
 
 
 
@@ -257,10 +258,14 @@ public class Indexer {
         termMap.clear();
         tknSet.clear();
 
+        List<String> docLines = new ArrayList<>();
+        //filewriter = new FileWriter(file, true);
+        //bw = new BufferedWriter(filewriter);
+        //writer = new PrintWriter(bw);
+        File docFile = new File(subFolderDocs.getPath() + "/" + DocBlock + ".txt");
         for (String docID : p.getWordCounter().keySet()) {
-            file = new File(subFolderDocs.getPath() + "/" + docID + ".txt");
-            if (!file.exists()) {
-                createdFile = file.createNewFile();
+            if (!docFile.exists()) {
+                createdFile = docFile.createNewFile();
                 if (!createdFile) {
                     throw new FilerException("cannot create file for indexer corpus" + docID);
                 }
@@ -270,18 +275,19 @@ public class Indexer {
 
             }
 
-            filewriter = new FileWriter(file, true);
-            bw = new BufferedWriter(filewriter);
-            writer = new PrintWriter(bw);
+            // posting line format: maxTf,numOfUniqueWords,docLength
+            //writer.print(p.getMaxTf().get(docID) + "," + p.getWordCounter().get(docID) + ","+p.getDocLength().get(docID));
+            //writer.flush();
+            //writer.close();
+            docLines.add(docID +":" +p.getMaxTf().get(docID) + "," + p.getWordCounter().get(docID) + ","+p.getDocLength().get(docID) +'\n');
 
-            // posting line format: maxTf,numOfUniqueWords,docLength,topFiveWord
-            writer.print(p.getMaxTf().get(docID) + "," + p.getWordCounter().get(docID) + ","+p.getDocLength().get(docID));
-            writer.flush();
-            writer.close();
+
             filewriter=null;
             bw=null;
             writer=null;
         }
+        DocBlock++;
+        writeRaw(docLines,docFile.getAbsolutePath());
         mutex.release();
         return true;
     }

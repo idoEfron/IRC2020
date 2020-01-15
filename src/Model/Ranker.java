@@ -1,19 +1,44 @@
 package Model;
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.Semaphore;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 public class Ranker {
     private double b_factor;
     private double k_factor;
-    private static Semaphore mutex = new Semaphore(1);
+    private Map<String,Map<String,Integer>> termDocTf;
+    private QueryRun query;
+    //private static Semaphore mutex = new Semaphore(1);
 
-    public Ranker(){
+    public Ranker(Map<String, List<String>> postingLines, List<String> queryToRank,List<String> SemanticQuery){
+        termDocTf =new HashMap<>();
+        for(String term : queryToRank){
+            List<String> tagValues = postingLines.get(term);
+            termDocTf.put(term,new HashMap<>());
+            for(String str: tagValues){
+                String[] postInfo = str.split("\\|");
+                termDocTf.get(term).put(postInfo[0],Integer.parseInt(postInfo[1]));
+            }
+        }
+        for(String term : SemanticQuery){
+            List<String> tagValues = postingLines.get(term);
+            if(!termDocTf.containsKey(term)){
+                termDocTf.put(term,new HashMap<>());
+                for(String str: tagValues){
+                    String[] postInfo = str.split("\\|");
+                    termDocTf.get(term).put(postInfo[0],Integer.parseInt(postInfo[1]));
+                }
+            }
+        }
 
         b_factor = 0.75;
         k_factor = 1.2;
@@ -28,25 +53,25 @@ public class Ranker {
         }
         else{
             b_factor = 0.75;
-            k_factor = 1.2;
+            k_factor = 1.1;
         }
     }
 
-    public double score(List<String> query, String doc, QueryRun queryRun) throws InterruptedException {
+    public double score(List<String> query, String doc, QueryRun queryRun,Map<String,Integer> docLength) throws InterruptedException {
 
         double totalScore =0;
         int numberOfDocs = ReadFile.getDocs();
         double avrgDocLength = Indexer.getTotalDocLength()/(double)numberOfDocs;
-        int docLength = getDocLength(doc);
+        int iDocLength = docLength.get(doc);
         for(String term: query){
             int queryTF = getQueryTF(query,term);
 
             int df = queryRun.getPostingLines().get(term).size();
             double idf = getIDF(numberOfDocs,df);
             double numerator = ((double)getTF(term,doc,queryRun))*(k_factor+1);
-            double lengthDivision = docLength/avrgDocLength;
+            double lengthDivision = iDocLength/avrgDocLength;
             double denominator = ((double)getTF(term,doc, queryRun)) +(k_factor*(1-b_factor+b_factor*lengthDivision));
-            double termScore = ((double)2*queryTF)*idf*(numerator/denominator);
+            double termScore = ((double)queryTF)*idf*(numerator/denominator);
             totalScore = totalScore + termScore;
         }
 
@@ -64,7 +89,7 @@ public class Ranker {
         return tf;
     }
 
-    private int getDocLength(String doc) {
+    /*private int getDocLength(String doc) {
         String posting ="";
         HashMap<String, Map <String,Set<String>>> indexer = Indexer.getDocDictionary();
         String path = (String) indexer.get(doc).keySet().toArray()[0];//todo ido change docdic
@@ -81,7 +106,7 @@ public class Ranker {
 
         String[] docInfo = posting.split(",");
         return Integer.parseInt(docInfo[2]);
-    }
+    }*/
 
     private int getDF(String term) {
         List<String> line = getPostingLine(term);
@@ -103,8 +128,9 @@ public class Ranker {
         int lineNum = indexer.get(term).get(indexer.get(term).keySet().toArray()[0]).get(1);
 
         // ******* reading specific line ********
-        try {
-            posting =Files.readAllLines(Paths.get(path)).get(lineNum);
+        try (Stream<String> lines = Files.lines(Paths.get(path))) {
+            posting = lines.skip(lineNum).findFirst().get();
+            //posting =Files.lines(Paths.get(path)).get(lineNum);
         } catch (IOException e) {
             System.out.println(path);
             System.out.println(lineNum);
@@ -128,11 +154,16 @@ public class Ranker {
     }
 
     public int getTF(String term, String doc, QueryRun queryRun){
-        List<String> tagValues = queryRun.getPostingLines().get(term);
+        /*List<String> tagValues = queryRun.getPostingLines().get(term);
         for(String str: tagValues){
             if(str.startsWith(doc)){
                 String[] termInfo = str.split("\\|");
                 return Integer.parseInt(termInfo[1]);
+            }
+        }*/
+        if(termDocTf.containsKey(term)){
+            if(termDocTf.get(term).containsKey(doc)){
+                return termDocTf.get(term).get(doc);
             }
         }
 

@@ -4,7 +4,6 @@ import Model.*;
 import Model.Merge;
 import Model.ReadFile;
 import com.medallia.word2vec.Word2VecModel;
-import snowball.ext.porterStemmer;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -22,6 +21,7 @@ public class viewModel {
     private Map<String,Map<String,Double>> docsRanks;
     private String corPath;
     private Map<String,Map<String,Double>> topFifty;
+    private Map<String,Integer> docLength;
 
     public viewModel() {
         documentInQuery = new LinkedList<>();
@@ -145,8 +145,10 @@ public class viewModel {
     }
     private void uploadMap(String posting,File docEntities, Map<String, Map<String, ArrayList<Integer>>> newIndex) throws IOException {
         if (docEntities.exists()) {
+            Indexer.getDocDictionary().clear();
+            Parser.getEntities().clear();
             List<String> doctxt = Files.readAllLines(docEntities.toPath(), StandardCharsets.UTF_8);
-            //docEntities.delete();
+            docEntities.delete();
             HashMap<String, Map<String, String>> hashDocEnt = new HashMap<>();
             for (int i = 0; i < doctxt.size(); i++) {
                 String[] strArr = doctxt.get(i).split(" : ");
@@ -298,6 +300,7 @@ public class viewModel {
      */
 
     public void loadDictionary(boolean selected, String postPath) throws IOException {
+        docLength = new HashMap<>();
         this.postPath = postPath;
         File file = new File(postPath + "/termDictionary.txt");
         Indexer index = new Indexer(selected, postPath);
@@ -360,7 +363,41 @@ public class viewModel {
                 Indexer.setTotalDocLength(Double.parseDouble(strArr[1]));
             }
         }
+
         buffCor.close();
+
+        File docFolder=null;
+        if(selected){
+            docFolder = new File(postPath + "/StemmedCorpus/Docs/");
+        }
+        else{
+            docFolder = new File(postPath + "/Corpus/Docs/");
+        }
+        File[] listOfFiles = docFolder.listFiles();
+
+        for (File doc : listOfFiles) {
+            if (doc.isFile()) {
+                try {
+                    List<String> posting = Files.readAllLines(doc.toPath());
+
+                    //******** splitting string by "," *********
+
+                    for(String str : posting){
+                        String[] docInfo = str.split(",");
+                        if(Character.isLetter(docInfo[2].charAt(0))){
+                            docLength.put(str.substring(0,str.indexOf(":")),0);
+
+                        }
+                        else{
+                            docLength.put(str.substring(0,str.indexOf(":")),Integer.parseInt(docInfo[2]));
+                        }
+                    }
+
+                } catch (Exception e) {
+                    System.out.println(doc);
+                }
+            }
+        }
     }
 
     public LinkedList<String> startQuery(String path, String stopWordsPath, boolean stem, boolean semanticSelected, boolean isDescription) throws IOException, ParseException, InterruptedException {
@@ -371,9 +408,9 @@ public class viewModel {
         Word2VecModel model = Word2VecModel.fromTextFile(new File("resources/word2vec.c.output.model.txt"));
         com.medallia.word2vec.Searcher semanticSearcher = model.forSearch();
 
-        ExecutorService executor = Executors.newFixedThreadPool(4);
+        ExecutorService executor = Executors.newFixedThreadPool(1);
         for (Query query : queryList) {
-            QueryRun queryRun = new QueryRun(query,docsRanks,semanticSelected,stem,isDescription, semanticSearcher);
+            QueryRun queryRun = new QueryRun(query,docsRanks,semanticSelected,stem,isDescription, semanticSearcher,docLength);
             executor.execute(new Thread(queryRun));
         }
         executor.shutdown();
@@ -420,7 +457,7 @@ public class viewModel {
         Map<String, Map<String, Double>> docsRanks = new HashMap<>();
         Word2VecModel model = Word2VecModel.fromTextFile(new File("resources/word2vec.c.output.model.txt"));
         com.medallia.word2vec.Searcher semanticSearcher = model.forSearch();
-        QueryRun queryRun = new QueryRun(singleQuery,docsRanks,semanticSelected,stem,isDescription,semanticSearcher);
+        QueryRun queryRun = new QueryRun(singleQuery,docsRanks,semanticSelected,stem,isDescription,semanticSearcher, docLength);
         queryRun.run();
         //docsRanks.put(singleQuery.getNumOfQuery(), getAllRankedDocs(singleQuery, semanticSelected, stem, isDescription));
 
