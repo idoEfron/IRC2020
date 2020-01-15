@@ -20,7 +20,7 @@ public class viewModel {
     private Map<String,Map<String,Double>> docsRanks;
     private String corPath;
     private Map<String,Map<String,Double>> topFifty;
-    private Map<String,Integer> docLength;
+    private static Map<String,Integer> docLength = new HashMap<>();
 
     public viewModel() {
         documentInQuery = new LinkedList<>();
@@ -42,6 +42,10 @@ public class viewModel {
 
     public int[] start(boolean stem, String postPath, String corpusPath) throws IOException {
 
+        Indexer.clearMap();
+        Indexer.setDocBlock(0);
+        Parser.setBlockNum(0);
+        docLength.clear();
         this.postPath = postPath;
         ReadFile.setDocs(0);
         Indexer.getTermDictionary().clear();
@@ -81,6 +85,7 @@ public class viewModel {
             }
         }
 
+        Parser.cleanEntities();
         executor = Executors.newFixedThreadPool(4);
         for (File file : subFolderTerms.listFiles()) {
             if (file.isDirectory()) {
@@ -143,7 +148,6 @@ public class viewModel {
     }
     private void uploadMap(String posting,File docEntities) throws IOException {
         if (docEntities.exists()) {
-            Indexer.getDocDictionary().clear();
             Parser.cleanEntities();
             List<String> doctxt = Files.readAllLines(docEntities.toPath(), StandardCharsets.UTF_8);
             docEntities.delete();
@@ -204,13 +208,14 @@ public class viewModel {
                 topFive.add("the ranking of the entity :" + maxString + " is " + max);
                 numberOfEntities++;
             }
-            topFiveEntitiesDocs.put(corPath +"/Docs/"+ s + ".txt" , topFive);
+            topFiveEntitiesDocs.put((String)Indexer.getDocDictionary().get(s).keySet().toArray()[0] , topFive);
         } else if (hashDocEnt.size() >= 0) {
         for (String str :hashDocEnt.keySet()){
             topFive.add("the ranking of the entity :" + str + " is " + hashDocEnt.get(str));
         }
-        topFiveEntitiesDocs.put(corPath + "/Docs/" + s + ".txt", topFive);
+        topFiveEntitiesDocs.put((String)Indexer.getDocDictionary().get(s).keySet().toArray()[0], topFive);
     }
+        Indexer.getDocDictionary().remove(s);
         return topFiveEntitiesDocs;
     }
 
@@ -494,5 +499,13 @@ public class viewModel {
 
     public Map<String, Map<String, Double>> getTopFifty() {
         return topFifty;
+    }
+
+    public static Map<String, Integer> getDocLength() {
+        return docLength;
+    }
+
+    public static void setDocLength(Map<String, Integer> docLength) {
+        viewModel.docLength = docLength;
     }
 }

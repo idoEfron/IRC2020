@@ -1,4 +1,6 @@
 package Model;
+import ViewModel.viewModel;
+
 import javax.annotation.processing.FilerException;
 import java.io.*;
 import java.util.*;
@@ -13,7 +15,7 @@ public class Indexer {
     private File subFolderDocs;
     private static Semaphore mutex = new Semaphore(1);
     private static double totalDocLength;
-    private static int DocBlock=0;
+    protected static int DocBlock=0;
 
 
     /**
@@ -267,29 +269,32 @@ public class Indexer {
         //bw = new BufferedWriter(filewriter);
         //writer = new PrintWriter(bw);
         File docFile = new File(subFolderDocs.getPath() + "/" + DocBlock + ".txt");
+        Map<String,Integer> DocLength = new HashMap<>();
         for (String docID : p.getWordCounter().keySet()) {
             if (!docFile.exists()) {
                 createdFile = docFile.createNewFile();
                 if (!createdFile) {
                     throw new FilerException("cannot create file for indexer corpus" + docID);
                 }
-                //todo ido add\
-                Map <String,Set<String>> temp = new HashMap<>();
-                docDictionary.put(docID,temp);
 
             }
+            //todo ido add\
+            Map <String,Set<String>> temp = new HashMap<>();
+            docDictionary.put(docID,temp);
+            docDictionary.get(docID).put(docFile.getAbsolutePath(),new HashSet<>());
 
             // posting line format: maxTf,numOfUniqueWords,docLength
             //writer.print(p.getMaxTf().get(docID) + "," + p.getWordCounter().get(docID) + ","+p.getDocLength().get(docID));
             //writer.flush();
             //writer.close();
             docLines.add(docID +":" +p.getMaxTf().get(docID) + "," + p.getWordCounter().get(docID) + ","+p.getDocLength().get(docID) +'\n');
-
+            docLength.put(docID,p.getDocLength().get(docID));
 
             filewriter=null;
             bw=null;
             writer=null;
         }
+        viewModel.getDocLength().putAll(docLength);
         DocBlock++;
         writeRaw(docLines,docFile.getAbsolutePath());
         mutex.release();
@@ -404,5 +409,10 @@ public class Indexer {
     }
     public static void setTotalDocLength(double totalDocLength) {
         Indexer.totalDocLength = totalDocLength;
+    }
+
+
+    public static void setDocBlock(int value) {
+        DocBlock=value;
     }
 }

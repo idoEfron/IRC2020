@@ -107,9 +107,9 @@ public class QueryRun implements Runnable {
                 }
             }
 
-            //getRelevantTermsWithDesc(descQuery, queriesTokens, stem, isDescription);
-            //descQuery.retainAll(indexedTerms);
-            //getRelevantDocs(descQuery,descDocs);
+            getRelevantTermsWithDesc(descQuery, queriesTokens, stem, isDescription);
+            descQuery.retainAll(indexedTerms);
+            getRelevantDocs(descQuery,descDocs);
 
             queryToRank.addAll(result);
             if (stem) {
@@ -167,9 +167,9 @@ public class QueryRun implements Runnable {
                 if (stem) {
                     desc = stemTerm(desc);
                 }
-                descSemantic.add(desc);
-                //descSemantic.add(desc.toLowerCase());
-                //descSemantic.add(desc.toUpperCase());
+                //descSemantic.add(desc);
+                descSemantic.add(desc.toLowerCase());
+                descSemantic.add(desc.toUpperCase());
             }
             query.addAll(descSemantic);
     }
@@ -210,7 +210,7 @@ public class QueryRun implements Runnable {
 
         for (String doc : retrievedDocs) {
             double originalRank = ranker.score(queryToRank, doc,this,this.docLength);
-            double newRank = (double)2.1 * originalRank +0.6*ranker.score(descQuery,doc,this,this.docLength) +0.2 * ranker.score(queryWithSemantic, doc, this,this.docLength);
+            double newRank = (double)2.1 * originalRank +0.05*ranker.score(descQuery,doc,this,this.docLength) +0.2 * ranker.score(queryWithSemantic, doc, this,this.docLength);
             docsRanks.put(doc, newRank);
 
         }

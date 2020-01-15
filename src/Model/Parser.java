@@ -31,7 +31,7 @@ public class Parser {
     private boolean isQuery;
     private String fileName;
     private Map<String, Map<String, String>> entitiesPerDoc;
-    private static int blockNum = 0;
+    protected static int blockNum = 0;
     //private Map<String, Set<String>> topFiveEntitiesDocs;
     private Map<String, Integer> docLength;
     private static Semaphore mutex = new Semaphore(1);
@@ -1329,5 +1329,9 @@ public class Parser {
      */
     public static void cleanEntities() {
         entities.clear();
+    }
+
+    public static void setBlockNum(int blockNum) {
+        Parser.blockNum = blockNum;
     }
 }

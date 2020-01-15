@@ -242,7 +242,7 @@ public class Searcher {
         Map<String, Double> docRankCopy = new HashMap<>(docRanked);
         if (docRanked.size() > 50) {
             int numberOfdocs = 0;
-            Map<String, Double> topFifty = new HashMap<>();
+            Map<String, Double> topFifty = new LinkedHashMap<>();
             while (numberOfdocs != 50) {
                 //int max = entitiesPerDoc.get(0);
                 Set<String> str = docRankCopy.keySet();
