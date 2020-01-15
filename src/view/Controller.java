@@ -53,8 +53,6 @@ public class Controller implements Initializable {
     private ObservableList<String> list = FXCollections.observableArrayList();
     @FXML
     private javafx.scene.control.CheckBox semanticCheckB;
-    @FXML
-    javafx.scene.control.CheckBox descripChoice;
 
     /**
      * this function start the program via the view panel
@@ -191,13 +189,9 @@ public class Controller implements Initializable {
             showAlert("no posting ");
             return;
         }
-        if (txtBrowse.getText() == null || txtBrowse.getText().equals("")) {
-            showAlert("no corpus ");
-            return;
-        }
         String path = txtQueryPath.getText();
         //Map<String,Map<String,Double>> finalDocs = viewModel.startQuery(path,txtBrowse.getText(),stemmerCheckB.isSelected(),semanticCheckB.isSelected());
-        List<String> outDisplay = viewModel.startQuery(path, txtBrowse.getText(), stemmerCheckB.isSelected(), semanticCheckB.isSelected(), descripChoice.isSelected());
+        List<String> outDisplay = viewModel.startQuery(path, txtPosting.getText(), stemmerCheckB.isSelected(), semanticCheckB.isSelected(), true);
         if (outDisplay != null && outDisplay.size() > 0) {
             ObservableList<String> observableList = FXCollections.observableList(outDisplay);
             ListView listView = new ListView<>();
@@ -270,10 +264,6 @@ public class Controller implements Initializable {
             return;
 
         }
-        if (txtBrowse.getText() == null) {
-            showAlert("no corpus ");
-            return;
-        }
         if (txtQuery.getText() == null) {
             showAlert("please enter query");
             return;
@@ -282,7 +272,7 @@ public class Controller implements Initializable {
             showAlert("please enter correct query");
             return;
         }
-        outDisplay = viewModel.startSingleQuery(query, txtBrowse.getText(), stemmerCheckB.isSelected(), semanticCheckB.isSelected(), descripChoice.isSelected());
+        outDisplay = viewModel.startSingleQuery(query, txtPosting.getText(), stemmerCheckB.isSelected(), semanticCheckB.isSelected(), true);
         if (outDisplay != null && outDisplay.size() > 0) {
             ObservableList<String> observableList = FXCollections.observableList(outDisplay);
             ListView listView = new ListView<>();
@@ -317,8 +307,9 @@ public class Controller implements Initializable {
             }
             viewModel.writeToResultFile(path);
             showAlert("Result have neen saved!!:)");
+        }else {
+            showAlert("please select correct path");
         }
-        showAlert("please select correct path");
     }
     /**
      * this is a controller function to show the dictionary in view panel

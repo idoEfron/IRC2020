@@ -19,6 +19,12 @@ public class Ranker {
     private QueryRun query;
     //private static Semaphore mutex = new Semaphore(1);
 
+    /**
+     * this function is the constructor of the class
+     * @param postingLines
+     * @param queryToRank
+     * @param SemanticQuery
+     */
     public Ranker(Map<String, List<String>> postingLines, List<String> queryToRank,List<String> SemanticQuery){
         termDocTf =new HashMap<>();
         for(String term : queryToRank){
@@ -44,7 +50,12 @@ public class Ranker {
         k_factor = 1.2;
 
     }
-
+    /**
+     * this function is a secondary constructor of the class and get the  b_factor and the k_factor parameters
+     *
+     * @param k the k_factor
+     * @param b the b_factor
+     */
     public Ranker(double k, double b){
 
         if(b>=0 && b<=1 && k>=1.2 && k<=2){
@@ -56,7 +67,15 @@ public class Ranker {
             k_factor = 1.1;
         }
     }
-
+    /**
+     * this function put a score acorrding to the formula
+     *
+     * @param query the query
+     * @param doc the document thar need to be score
+     * @param queryRun the queryRun object
+     * @return the score
+     * @throws InterruptedException
+     */
     public double score(List<String> query, String doc, QueryRun queryRun,Map<String,Integer> docLength) throws InterruptedException {
 
         double totalScore =0;
@@ -79,6 +98,12 @@ public class Ranker {
 
     }
 
+    /**
+     *this function is a getter
+     * @param query
+     * @param term
+     * @return
+     */
     private int getQueryTF(List<String> query, String term) {
         int tf =0;
         for(String str: query){
@@ -108,13 +133,23 @@ public class Ranker {
         return Integer.parseInt(docInfo[2]);
     }*/
 
+    /**
+     *this function is a getter
+     * @param term
+     * @return
+     */
     private int getDF(String term) {
         List<String> line = getPostingLine(term);
         return line.size();
 
     }
 
-    public static List<String> getPostingLine(String term){
+    /**
+     *this function is a getter
+     * @param term
+     * @return
+     */
+    public static List<String> getPostingLine(String term) {
         Pattern TAG_REGEX = Pattern.compile("<(.+?)>", Pattern.DOTALL);
         String posting ="";
         Map<String, Map<String, ArrayList<Integer>>> indexer = Indexer.getTermDictionary();
@@ -147,12 +182,23 @@ public class Ranker {
 
         return tagValues;
     }
-
+    /**
+     *this function is a getter
+     * @param numberOfDocs
+     * @param df
+     * @return
+     */
     private double getIDF(int numberOfDocs, int df) {
 
         return Math.log((numberOfDocs+1)/((double)df));
     }
-
+    /**
+     *this function is a getter
+     * @param term
+     * @param doc
+     * @param queryRun
+     * @return
+     */
     public int getTF(String term, String doc, QueryRun queryRun){
         /*List<String> tagValues = queryRun.getPostingLines().get(term);
         for(String str: tagValues){

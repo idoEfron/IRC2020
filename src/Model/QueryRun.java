@@ -17,7 +17,16 @@ public class QueryRun implements Runnable {
     private Searcher semanticSearcher;
     private static Map<String,List<String>> postingLines =new HashMap<>();;
     private Map<String,Integer> docLength;
-
+    /**
+     * this function is the constructor of the class
+     *
+     * @param query            the query
+     * @param docsRanks        the map inside map of the docsRanks
+     * @param semanticSelected if the semantic option was selected
+     * @param stem             if the stammer option was selected
+     * @param isDescription
+     * @param semanticSearcher
+     */
     public QueryRun(Query query, Map<String, Map<String, Double>> docsRanks, boolean semanticSelected, boolean stem, boolean isDescription, Searcher semanticSearcher, Map<String, Integer> docLength){
         this.query = query;
         this.docsRanks = docsRanks;
@@ -29,11 +38,17 @@ public class QueryRun implements Runnable {
 
     }
 
+    /**
+     * this is the run function
+     */
     @Override
     public void run() {
         runQuery();
     }
 
+    /**
+     * this function run the query and call getAllRankedDocs to get all the ranked documents in a query
+     */
     private void runQuery() {
         try {
             Map<String, Double> docRank = getAllRankedDocs(query, semanticSelected, stem, isDescription);
@@ -45,6 +60,16 @@ public class QueryRun implements Runnable {
         }
     }
 
+    /**
+     * this function return all the ranked documents in a query
+     *
+     * @param queriesTokens    the query
+     * @param semanticSelected if semanticSelected was selected
+     * @param stem if is stemming was selected
+     * @param isDescription
+     * @return the RankedDocsin query
+     * @throws IOException
+     */
     private Map<String, Double> getAllRankedDocs(Query queriesTokens, boolean semanticSelected, boolean stem, boolean isDescription) throws IOException {
         List<String> queryWithSemantic = new ArrayList<>();
         List<String> descQuery = new ArrayList<>();
@@ -113,7 +138,12 @@ public class QueryRun implements Runnable {
         return docsRanks;
 
     }
-
+    /**this function get all the ranked documents in a query with description
+     * @param query the query
+     * @param queriesTokens the list if token description in a query
+     * @param stem if is stemming was selected
+     * @param isDescription
+     */
     private void getRelevantTermsWithDesc(List<String> query, Query queriesTokens, boolean stem, boolean isDescription) {
         //remove garbage terms
         ArrayList<String> garbage = new ArrayList<>();
@@ -146,7 +176,11 @@ public class QueryRun implements Runnable {
             query.addAll(descSemantic);
     }
 
-
+    /**
+     * this function use stemming id a semantic option was selected
+     * @param semanticTerm
+     * @return the semanticTerm
+     */
     private static String stemTerm(String semanticTerm) {
         if(Character.isUpperCase(semanticTerm.charAt(0))){
             String newTerm= new String(semanticTerm.toLowerCase());
@@ -164,7 +198,14 @@ public class QueryRun implements Runnable {
         newTerm =ps.getCurrent();
         return newTerm;
     }
-
+    /**+
+     * this function ranking all the rekevent document
+     * @param retrievedDocs the retrieved Documents of a query
+     * @param queryToRank all of the token array of the query
+     * @param queryWithSemantic the query with Semantic
+     * @return
+     * @throws InterruptedException
+     */
     private Map<String, Double> rankDocs(Set<String> retrievedDocs, List<String> queryToRank, List<String> queryWithSemantic,List<String> descQuery) throws InterruptedException {
         Ranker ranker = new Ranker(postingLines,queryToRank,queryWithSemantic);
         Map<String, Double> docsRanks = new HashMap<>();
@@ -179,6 +220,12 @@ public class QueryRun implements Runnable {
         return docsRanks;
     }
 
+    /**
+     * this function add the return documents to the retrievedDocs
+     * @param term the term
+     * @param retrievedDocs the retrievedDocs data structure
+     * @throws InterruptedException
+     */
     private void addDocstoRetrievedDocs(String term, Set<String> retrievedDocs) throws InterruptedException {
         List<String> postingLine = new ArrayList<>();
         mutex.acquire();
@@ -197,13 +244,28 @@ public class QueryRun implements Runnable {
 
     }
 
+    /**
+     * this function get all the relevant document
+     * @param queryToRank
+     * @param retrievedDocs
+     * @throws InterruptedException
+     */
     private void getRelevantDocs(List<String> queryToRank, Set<String> retrievedDocs) throws InterruptedException {
 
         for (String queryTerm : queryToRank) {
             addDocstoRetrievedDocs(queryTerm, retrievedDocs);
         }
     }
-
+    /**
+     * this function get all the relevant document with semantics
+     * @param queryToRank the query
+     * @param queryWithSemantic the tokens of the query with Semantic
+     * @param indexedTerms
+     * @param semanticSearcher the semanticSearcher
+     * @param numOfResults
+     * @param stem if stammer option was selected
+     * @param isDescription
+     */
     private void getRelevantDocsWithSemantics(Query queryToRank, List<String> queryWithSemantic, Set indexedTerms, Searcher semanticSearcher, int numOfResults, boolean stem, boolean isDescription) {
         for (String queryTerm : queryToRank.getTokenQuery()) {
             try {
@@ -232,6 +294,10 @@ public class QueryRun implements Runnable {
         }
     }
 
+    /**
+     * this functuin get the posting line for each term
+     * @return the posting line map
+     */
     public Map<String, List<String>> getPostingLines() {
         return postingLines;
     }

@@ -107,10 +107,19 @@ public class ReadFile implements  Runnable{
     public void setSubFolder(List<File> subFolder) {
         this.subFolder = subFolder;
     }
+
+    /**
+     * this function is a getter
+     * @return
+     */
     public static int getDocs() {
         return docs;
     }
 
+    /**
+     * this function is a setter
+     * @param docs
+     */
     public static void setDocs(int docs) {
         ReadFile.docs = docs;
     }

@@ -16,7 +16,10 @@ public class Indexer {
     private static int DocBlock=0;
 
 
-
+    /**
+     * this function is a getter that return the document Dictionary
+     * @return the document dictionary
+     */
     public static HashMap<String, Map<String,Set<String>>> getDocDictionary() {
         return docDictionary;
     }
@@ -60,6 +63,12 @@ public class Indexer {
 
     }
 
+    /**
+     *
+     * @param tkn
+     * @param lines
+     * @param termMap
+     */
     public void lineMap(Token tkn,Map <String ,List<String>> lines,Map<Token, Map<String, ArrayList<String>>> termMap){
 
         if(Character.isLetter(tkn.getStr().charAt(0))){
@@ -85,14 +94,9 @@ public class Indexer {
     }
 
     /**
-     * todo ido add!!!!!!!!!!!!!!!!!!!!!!
-     * @return
+     * this function is a getter that retunr a posting path
+     * @return the posting path
      */
-//    public String getPostingPath() {
-//        return postingPath;
-//    }
-
-
     public String getPostingPath() {
         return postingPath;
     }
@@ -388,7 +392,9 @@ public class Indexer {
     public static void setDocDictionary(HashMap<String, Map<String, Set<String>>> docDictionary) {
         Indexer.docDictionary = docDictionary;
     }
-
+    public static void clearDocdic(){
+        docDictionary.clear();
+    }
     /**
      * this function is a setter that save the term Dictionary
      * @param termDictionary
